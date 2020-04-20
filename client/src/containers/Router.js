@@ -5,7 +5,7 @@ import {
 } from 'react-router-dom';
 
 import Home from './Home';
-import Room from './Room';
+import BattleRoom from './BattleRoom';
 import CreateBattle from './CreateBattle';
 
 class Router extends Component {
@@ -13,7 +13,7 @@ class Router extends Component {
         return (
             <BrowserRouter>
                 <Route exact path = '/' component = { Home } />
-                <Route exact path = '/room/:roomId' component = { Room } />
+                <Route exact path = '/battle/:battleId' component = { BattleRoom } />
                 <Route exact path = '/create-battle' component = { CreateBattle } />
             </BrowserRouter>
         )
