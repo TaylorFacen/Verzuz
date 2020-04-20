@@ -11,7 +11,8 @@ const app = express();
 mongoose.Promise = global.Promise;
 mongoose.connect(process.env.MONGODB_URI, { 
     useNewUrlParser: true,
-    useUnifiedTopology: true  
+    useUnifiedTopology: true,
+    useFindAndModify: false
 });
 const db = mongoose.connection;
 db.on('error', (error) => console.log(error))
@@ -34,4 +35,4 @@ if (process.env.NODE_ENV === 'production') {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`app running on port ${PORT}`)
-});
+})

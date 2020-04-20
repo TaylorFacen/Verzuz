@@ -32,8 +32,13 @@ module.exports = ( app ) => {
         const { battleId } = req.params;
 
         let battle = await Battle.findById(battleId);
+        if ( battle ) {
+            return res.status(200).send(battle)
+        } else {
+            return res.status(404).send("Not Found")
+        }
 
-        return res.status(200).send(battle)
+        
     })
 
     app.put(`/api/battles/:battleId`, async (req, res) => {

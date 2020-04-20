@@ -1,33 +1,50 @@
 import React, { Component } from "react";
 
+import ActiveBattle from './ActiveBattle';
+import BattleEnded from './BattleEnded';
+import BattleNotFound from './BattleNotFound';
+import BattleNotStarted from './BattleNotStarted';
+
 import battleService from '../../services/battleService';
 
 class BattleRoom extends Component {
     state = {
-        battle: null
+        battle: null,
+        isLoading: true
     }
 
     componentDidMount(){
         const battleId = this.props.match.params.battleId.toUpperCase();
-
         battleService.getBattle(battleId)
         .then(battle => {
             this.setState({
-                battle
+                battle,
+                isLoading: false
             })
         })
-        .catch(error => console.log(error))
-
-
+        .catch(error => {
+            if (error?.response?.status === 404 ) {
+                // Battle not found 
+                this.setState({
+                    isLoading: false
+                })
+            } else {
+                console.log(error)
+            }
+        })
     }
 
     render(){
-        const { battle } = this.state;
-        return battle && (
+        const { battle, isLoading } = this.state;
+
+        return !isLoading ? (
             <div className = "BattleRoom">
-                Battle: {battle.name}
+                { !battle ? <BattleNotFound /> : null }
+                { !!battle & !battle?.startedOn ? <BattleNotStarted /> : null }
+                { !!battle & !!battle?.startedOn & !battle?.endedOn ? <ActiveBattle battle = { battle } /> : null }
+                { !!battle & !!battle?.startedOn & !!battle?.endedOn ? <BattleEnded /> : null }
             </div>
-        )
+        ) : null
     }
 }
 
