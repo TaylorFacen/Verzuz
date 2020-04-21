@@ -1,6 +1,9 @@
 .BattleSearch {
     width: 300px;
     position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 200px;
 }
 
 .SearchField {
