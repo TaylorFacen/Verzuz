@@ -4,7 +4,7 @@ import { Form, Button } from 'react-bootstrap';
 export default ({ onSubmit }) => (
     <div className = "BattleDetails">
         <Form onSubmit = { onSubmit }>
-            <Button type = "submit">Next</Button>
+            <Button className = "cta" type = "submit">Next</Button>
         </Form>
     </div>
 )

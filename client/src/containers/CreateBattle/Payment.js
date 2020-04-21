@@ -6,7 +6,7 @@ export default ({ onSubmit, goBackToBattleDetails}) => (
         <Form onSubmit = { onSubmit }>
             <div className = "form-buttons">
                 <Button variant = "link" onClick = { goBackToBattleDetails }>Back</Button>
-                <Button type = "submit">Submit Payment</Button>
+                <Button className = "cta" type = "submit">Submit Payment</Button>
             </div>
         </Form>
     </div>
