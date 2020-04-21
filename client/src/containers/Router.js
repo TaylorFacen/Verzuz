@@ -13,7 +13,7 @@ class Router extends Component {
         return (
             <BrowserRouter>
                 <Route exact path = '/' component = { Home } />
-                <Route exact path = '/battle/:battleId' component = { BattleRoom } />
+                <Route exact path = '/battles/:battleId' component = { BattleRoom } />
                 <Route exact path = '/create-battle' component = { CreateBattle } />
             </BrowserRouter>
         )

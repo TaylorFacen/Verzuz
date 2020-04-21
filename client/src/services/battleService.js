@@ -1,6 +1,10 @@
 import axios from 'axios';
 
 export default {
+    getAllBattles: async () => {
+        let res = await axios.get('/api/battles');
+        return res.data || [];
+    },
     getBattle: async battleId => {
         let res = await axios.get(`/api/battles/${battleId}`);
         return res.data || {};

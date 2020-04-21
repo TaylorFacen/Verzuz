@@ -1,13 +1,10 @@
-import React, { Component } from 'react';
+import React from 'react';
 
-class Home extends Component {
-    render(){
-        return (
-            <div className = "Home">
-                Home Page
-            </div>
-        )
-    }
-}
+import './Home.css';
+import BattleSearch from './BattleSearch';
 
-export default Home;
+export default () => (
+    <div className = "Home">
+        <BattleSearch />
+    </div>
+);

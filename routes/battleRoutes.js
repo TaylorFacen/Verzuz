@@ -10,14 +10,16 @@ module.exports = ( app ) => {
         let battles = await Battle.find({}, {
             "_id": 1,
             "name": 1,
-            "createdOn": 1
+            "createdOn": 1,
+            "startedOn": 1,
+            "endedOn": 1
         });
         return res.status(200).send(battles);
     });
 
     app.post(`/api/battles`, async (req, res) => {
         const data = {
-            _id: new mongoose.Types.ObjectId().toHexString().substring(0, 5).toUpperCase(),
+            _id: Math.random().toString(36).substr(2, 5).toUpperCase(),
             ...req.body
         }
 
