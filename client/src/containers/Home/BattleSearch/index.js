@@ -16,7 +16,6 @@ class BattleSearch extends Component {
         // Get all battles
         battleService.getAllBattles()
         .then(battles => {
-            console.log(battles)
             this.setState({
                 battles
             })
