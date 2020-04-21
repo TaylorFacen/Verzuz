@@ -1,9 +1,13 @@
 .BattleSearch {
     width: 300px;
+    position: relative;
 }
 
 .SearchField {
     height: 35px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
 }
 
 .SearchField input {
@@ -24,4 +28,30 @@
     border-right-color: transparent;
     border-top-left-radius: 15px;
     border-bottom-left-radius: 15px;
+}
+
+.SearchResults {
+    text-align: left;
+    border: 1px solid #ced4da;
+    padding: 40px 10px 5px 10px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 300px;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    overflow: scroll;
+    height: 100px;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.SearchResults::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE and Edge */
+.SearchResults {
+    -ms-overflow-style: none;
 }

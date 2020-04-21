@@ -2,14 +2,14 @@ import React, { Component } from 'react';
 
 import './BattleSearch.css';
 import SearchField from './SearchField';
+import SearchResults from './SearchResults';
 
 import battleService from '../../../services/battleService';
 
 class BattleSearch extends Component {
     state = {
         searchInput: '',
-        battles: [],
-        filteredBattles: []
+        battles: []
     }
 
     componentDidMount(){
@@ -23,28 +23,40 @@ class BattleSearch extends Component {
         })
     }
 
-    filterBattles = searchInput => {
-        const { battles } = this.state;
+    filterBattles = (battles, searchInput) => {
         return battles.filter(battle =>  battle.name.toLowerCase().includes(searchInput.toLowerCase()))
     }
 
     onChange = e => {
-        const searchInput = e.value;
-        const filteredBattles = this.filterBattles(searchInput);
+        const searchInput = e.target.value;
         this.setState({
             searchInput,
-            filteredBattles
         })
     }
 
     onClick = battleId => {
+        const { battles } = this.state;
         // Go to battle room
+        this.setState({
+            searchInput: battles.filter(battle => battle._id === battleId)[0]?.name
+        })
     }
 
     render(){
+        const { battles, searchInput } = this.state;
+        console.log(this.filterBattles(battles, searchInput))
         return (
             <div className = "BattleSearch">
-                <SearchField />
+                { searchInput.length >= 3 ? (
+                    <SearchResults 
+                        onClick = { this.onClick.bind(this) }
+                        battles = { this.filterBattles(battles, searchInput) }  
+                    />
+                ) : null }
+                <SearchField 
+                    searchInput = { searchInput }
+                    onChange = { this.onChange.bind(this) }
+                />
             </div>
         )
     }
