@@ -55,6 +55,7 @@
 
 .SearchResults a {
     color: #333;
+    display: block;
 }
 
 .SearchResults a:hover {

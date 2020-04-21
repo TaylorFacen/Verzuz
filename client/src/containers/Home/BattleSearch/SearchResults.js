@@ -4,7 +4,7 @@ export default ({ battles, onClick }) => (
     <ul className = "SearchResults">
         { battles.length > 0 ? (
             battles.map(battle => (
-                <li><a onClick = {() => onClick(battle._id)} key = { battle._id } href = {`/battles/${battle._id}`}>{ battle.name }</a></li>
+                <li key = { battle._id }><a onClick = {() => onClick(battle._id)} key = { battle._id } href = {`/battles/${battle._id}`}>{ battle.name }</a></li>
             ))
         ) : "No Battles Found"}
     </ul>
