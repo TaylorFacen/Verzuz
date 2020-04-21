@@ -10,7 +10,9 @@ module.exports = ( app ) => {
         let battles = await Battle.find({}, {
             "_id": 1,
             "name": 1,
-            "createdOn": 1
+            "createdOn": 1,
+            "startedOn": 1,
+            "endedOn": 1
         });
         return res.status(200).send(battles);
     });
