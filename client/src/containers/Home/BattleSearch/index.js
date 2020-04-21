@@ -44,7 +44,6 @@ class BattleSearch extends Component {
 
     render(){
         const { battles, searchInput } = this.state;
-        console.log(this.filterBattles(battles, searchInput))
         return (
             <div className = "BattleSearch">
                 { searchInput.length >= 3 ? (

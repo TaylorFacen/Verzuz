@@ -46,6 +46,18 @@
     height: 100px;
 }
 
+.SearchResults li {
+    margin-bottom: 5px;
+}
+
+.SearchResults a {
+    color: #333;
+}
+
+.SearchResults a:hover {
+    text-decoration: none;
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .SearchResults::-webkit-scrollbar {
     display: none;
