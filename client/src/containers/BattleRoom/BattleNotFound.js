@@ -4,8 +4,8 @@ import { Image, Button } from 'react-bootstrap';
 const Shuffle = require('../../images/shuffle.png');
 
 export default () => (
-    <div className = "BattleNotFound">
-        <Image className = "hero" src = { Shuffle } />
+    <div className = "BattleNotFound module">
+        <Image className = "hero" src = { Shuffle } alt = "Shuffle icon"/>
         <h3>Oops, looks like that battle doesn't exist.</h3>
         <p>Why not create one?</p>
         <Button className = "cta" href = "/create-battle">Create Battle</Button>

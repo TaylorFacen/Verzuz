@@ -70,15 +70,15 @@ select[disabled]::-ms-expand {	display: none; }
     font-size: 30px;
 }
 
-.Confirmation h2 {
+.CreateBattle .Confirmation h2 {
     margin-bottom: 30px;
     margin-top: 10px
 }
 
-.Confirmation .text {
+.CreateBattle .Confirmation .text {
     margin-bottom: 20px;
 }
 
-.Confirmation .links a {
+.CreateBattle .Confirmation .links a {
     display: block;
 }

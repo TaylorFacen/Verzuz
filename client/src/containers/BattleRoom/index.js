@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 
-import './ActiveBattle.css';
+import './BattleRoom.css';
 import ActiveBattle from './ActiveBattle';
 import BattleEnded from './BattleEnded';
 import BattleNotFound from './BattleNotFound';
@@ -11,7 +11,8 @@ import battleService from '../../services/battleService';
 class BattleRoom extends Component {
     state = {
         battle: null,
-        isLoading: true
+        isLoading: true,
+        phoneNumber: ''
     }
 
     componentDidMount(){
@@ -35,13 +36,26 @@ class BattleRoom extends Component {
         })
     }
 
+    onChange = e => {
+        const { name, value } = e.target;
+        this.setState({
+            [name]: value
+        })
+    }
+
     render(){
-        const { battle, isLoading } = this.state;
+        const { battle, isLoading, phoneNumber } = this.state;
 
         return !isLoading ? (
             <div className = "BattleRoom">
                 { !battle ? <BattleNotFound /> : null }
-                { !!battle & !battle?.startedOn ? <BattleNotStarted /> : null }
+                { !!battle & !battle?.startedOn ? (
+                    <BattleNotStarted 
+                        battle = { battle }
+                        phoneNumber = { phoneNumber }
+                        onChange = { this.onChange.bind(this) }
+                    /> 
+                ): null }
                 { !!battle & !!battle?.startedOn & !battle?.endedOn ? <ActiveBattle battle = { battle } /> : null }
                 { !!battle & !!battle?.startedOn & !!battle?.endedOn ? <BattleEnded /> : null }
             </div>

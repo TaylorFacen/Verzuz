@@ -2,7 +2,7 @@
     background-color: #F2F2F2;
 }
 
-.BattleNotFound {
+.module {
     background-color: white;
     padding: 20px 40px;
     border-radius: 20px;
@@ -21,6 +21,19 @@
     margin: 20px 0;
 }
 
-.BattleNotFound .hero {
+.BattleNotFound .hero, .BattleNotStarted .hero {
     margin-bottom: 15px;
+}
+
+.PhoneNumberForm form {
+    max-width: 300px;
+    margin: 10px auto;
+}
+
+.BattleNotStarted .Confirmation {
+    margin: 10px auto;
+}
+
+.PhoneNumberForm .form-text {
+    text-align: center;
 }
