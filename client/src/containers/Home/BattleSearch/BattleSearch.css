@@ -3,7 +3,6 @@
     position: relative;
     margin-left: auto;
     margin-right: auto;
-    margin-top: 200px;
 }
 
 .SearchField {
@@ -46,7 +45,7 @@
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
     overflow: scroll;
-    height: 100px;
+    height: 125px;
 }
 
 .SearchResults li {

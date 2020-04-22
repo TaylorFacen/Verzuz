@@ -37,6 +37,14 @@
   }
 }
 
+h1, h2, h3, h4, h5, h6, p {
+    color: #333;
+}
+
+.form-group {
+    text-align: left;
+}
+
 /* Removes the Chrome autofill input color */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
@@ -52,3 +60,24 @@ input:-webkit-autofill:active  {
     box-shadow: none;
     outline: none !important;
 }
+
+.btn.cta, .btn.cta:focus, .btn.cta:active {
+    background-color: #815587 !important;
+    border-color: #815587 !important;
+    color: white;
+}
+
+.btn.cta:hover:not([disabled]) {
+    background-color: #815587;
+    border-color: #815587;
+    box-shadow: 1px 2px 4px rgba(0, 0, 0, .5);
+}
+
+.btn.cta:active {
+    outline: none;
+}
+
+.App a, .App a:hover {
+    color: #815587;
+}
+

@@ -1,0 +1,84 @@
+.CreateBattle > .row {
+    height: 100%;
+    margin: 0px;
+}
+
+.CreateBattle .col-lg-6, .CreateBattle .col-md-6, .CreateBattle .col-sm-6, .CreateBattle .col-xs-6 {
+    padding: 20px 50px;
+}
+
+.overview-col {
+    background-color: #F2F2F2;
+}
+
+.BattleDetails .form-row {
+    margin: 0px;
+}
+
+.BattleDetails .form-group {
+    width: 100%;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.BattleDetails .form-text {
+    text-align: center;
+}
+
+.BattleDetails select[disabled] {
+    background-color: white;
+    -webkit-appearance: none;
+}
+
+select[disabled]::-ms-expand {	display: none; }
+
+.Overview {
+    padding: 0px;
+}
+
+.Overview ul {
+    text-align: left;
+    margin-top: 20px;
+    font-size: 24px;
+    list-style: none;
+}
+
+.Overview li {
+    padding: 10px;
+}
+
+.Overview .hero {
+    width: 175px;
+    height: auto;
+}
+
+.Overview .content {
+    background-color: white;
+    width: 100%;
+    padding: 10px 20px;
+    border-radius: 20px;
+    box-shadow: 1px 2px 4px rgba(0, 0, 0, .5)
+}
+
+.Overview  ul li::before {
+    content: "〜";  
+    color: #815587; 
+    font-weight: bold; 
+    display: inline-block; /* Needed to add space between the bullet and the text */
+    width: 1.5em; /* Also needed for space (tweak if needed) */
+    margin-left: -1.5em; /* Also needed for space (tweak if needed) */
+    font-size: 30px;
+}
+
+.Confirmation h2 {
+    margin-bottom: 30px;
+    margin-top: 10px
+}
+
+.Confirmation .text {
+    margin-bottom: 20px;
+}
+
+.Confirmation .links a {
+    display: block;
+}
