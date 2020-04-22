@@ -4,6 +4,8 @@ import { Image } from 'react-bootstrap';
 import Confirmation from './Confirmation';
 import PhoneNumberForm from './PhoneNumberForm';
 
+import battleService from '../../../services/battleService';
+
 const Headphone = require('../../../images/headphone.png')
 
 class BattleNotStarted extends Component {
@@ -21,10 +23,18 @@ class BattleNotStarted extends Component {
     }
 
     onSubmit = e => {
+        const { battle } = this.props;
+        const { phoneNumber } = this.state;
+
         e.preventDefault();
-        this.setState({
-            displayPhoneNumberForm: false
+
+        battleService.addSubscriber(battle._id, phoneNumber )
+        .then(() => {
+            this.setState({
+                displayPhoneNumberForm: false
+            })
         })
+        .catch(error => console.log(error))
     }
 
     render(){

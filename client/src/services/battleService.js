@@ -12,6 +12,10 @@ export default {
     createBattle: async data => {
         let res = await axios.post(`/api/battles`, data);
         return res.data || {};
+    },
+    addSubscriber: async (battleId, phoneNumber ) => {
+        let res = await axios.post(`/api/battles/${battleId}/subscribers`, {phoneNumber: phoneNumber} )
+        return res.sata || {};
     }
 
 }
