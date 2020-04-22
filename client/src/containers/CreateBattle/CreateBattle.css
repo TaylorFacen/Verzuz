@@ -68,4 +68,17 @@ select[disabled]::-ms-expand {	display: none; }
     width: 1.5em; /* Also needed for space (tweak if needed) */
     margin-left: -1.5em; /* Also needed for space (tweak if needed) */
     font-size: 30px;
-  }
+}
+
+.Confirmation h2 {
+    margin-bottom: 30px;
+    margin-top: 10px
+}
+
+.Confirmation .text {
+    margin-bottom: 20px;
+}
+
+.Confirmation .links a {
+    display: block;
+}

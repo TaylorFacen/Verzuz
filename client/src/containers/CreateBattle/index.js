@@ -6,27 +6,53 @@ import BattleDetails from './BattleDetails';
 import Confirmation from './Confirmation';
 import Overview from './Overview';
 
+import battleService from '../../services/battleService';
+
 class CreateBattle extends Component {
     state = {
         audienceLimit: 10,
         displayBattleDetails: true,
         displayConfirmationScreen: false,
         battleName: '',
-        rounds: 5,
+        roundCount: 5,
         participant1Name: '',
         participant1Email: '',
         participant2Name: '',
-        participant2Email: ''
+        participant2Email: '',
+        battle: null
     }
 
     submitBattleDetails = e => {
+        const { audienceLimit,  battleName, roundCount, participant1Name, participant1Email, participant2Name, participant2Email } = this.state;
         e.preventDefault();
-        console.log(this.state)
 
-        this.setState({
-            displayBattleDetails: false,
-            displayConfirmationScreen: true
+        const data = {
+            name: battleName,
+            roundCount: roundCount,
+            audienceLimit: audienceLimit,
+            participants: [
+                {
+                    name: participant1Name,
+                    email: participant1Email,
+                    accessCode: Math.random().toString(36).substr(2, 6).toUpperCase()
+                },
+                {
+                    name: participant2Name,
+                    email: participant2Email,
+                    accessCode: Math.random().toString(36).substr(2, 6).toUpperCase()
+                }
+            ]
+        }
+
+        battleService.createBattle(data)
+        .then(response => {
+            this.setState({
+                displayBattleDetails: false,
+                displayConfirmationScreen: true,
+                battle: response.battle
+            })
         })
+        .catch(error => console.log(error))
     }
 
     validateBattleDetails = () => {
@@ -44,7 +70,7 @@ class CreateBattle extends Component {
 
     render(){
         const { displayBattleDetails, displayConfirmationScreen } = this.state;
-        const { battleName, rounds, audienceLimit, participant1Name, participant1Email, participant2Name, participant2Email } = this.state;
+        const { battleName, roundCount, audienceLimit, participant1Name, participant1Email, participant2Name, participant2Email, battle } = this.state;
         return (
             <div className = "CreateBattle">
                 <Row>
@@ -55,7 +81,7 @@ class CreateBattle extends Component {
                                 onSubmit = { this.submitBattleDetails.bind(this) }
                                 onChange = { this.onChange.bind(this) }
                                 battleName = { battleName }
-                                rounds = { rounds }
+                                roundCount = { roundCount }
                                 audienceLimit = { audienceLimit }
                                 participant1Email = { participant1Email }
                                 participant1Name = { participant1Name }
@@ -64,7 +90,16 @@ class CreateBattle extends Component {
                                 isValid = { this.validateBattleDetails() }
                             /> 
                         ): null }
-                        { displayConfirmationScreen ? <Confirmation /> : null }
+                        { displayConfirmationScreen ? (
+                            <Confirmation 
+                                battleName = { battleName }
+                                participant1Name = { participant1Name }
+                                participant2Name = { participant2Name } 
+                                battleId = { battle?._id }
+                                roundCount = { roundCount }
+                                audienceLimit = { audienceLimit }
+                            /> 
+                        ): null }
                     </Col>
                 </Row>
             </div>

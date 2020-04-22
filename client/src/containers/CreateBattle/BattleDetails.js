@@ -1,7 +1,7 @@
 import React from 'react';
 import { Form, Button, Col } from 'react-bootstrap';
 
-export default ({ onSubmit, onChange, battleName, rounds, audienceLimit, participant1Email, participant1Name, participant2Name, participant2Email, isValid }) => (
+export default ({ onSubmit, onChange, battleName, roundCount, audienceLimit, participant1Email, participant1Name, participant2Name, participant2Email, isValid }) => (
     <div className = "BattleDetails">
         <h2>Battle Details</h2>
         <Form onSubmit = { onSubmit }>
@@ -18,13 +18,13 @@ export default ({ onSubmit, onChange, battleName, rounds, audienceLimit, partici
             </Form.Row>
             <Form.Row>
                 <Col lg = { 6 } md = { 12 } sm = { 12 }>
-                    <Form.Group controlId="rounds">
+                    <Form.Group controlId="roundCount">
                         <Form.Label>Rounds</Form.Label>
                         <Form.Control 
                             as = "select"
                             onChange = { onChange }
-                            value = { rounds }
-                            name = "rounds"
+                            value = { roundCount }
+                            name = "roundCount"
                         >
                             <option>5</option>
                             <option>10</option>

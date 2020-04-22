@@ -6,6 +6,9 @@ const battleSchema = new Schema({
     name: String,
     startedOn: Date,
     endedOn: Date,
+    participants: Array,
+    roundCount: Number,
+    audienceLimit: Number,
     createdOn: { type: Date, required: true, default: Date.now }
 })
 

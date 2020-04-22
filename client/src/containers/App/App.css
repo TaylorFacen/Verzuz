@@ -37,7 +37,7 @@
   }
 }
 
-h1, h2, h3 {
+h1, h2, h3, h4, h5, h6, p {
     color: #333;
 }
 
@@ -75,3 +75,8 @@ input:-webkit-autofill:active  {
 .btn.cta:active {
     outline: none;
 }
+
+.App a, .App a:hover {
+    color: #815587;
+}
+
