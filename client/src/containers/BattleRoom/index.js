@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 
+import './ActiveBattle.css';
 import ActiveBattle from './ActiveBattle';
 import BattleEnded from './BattleEnded';
 import BattleNotFound from './BattleNotFound';
