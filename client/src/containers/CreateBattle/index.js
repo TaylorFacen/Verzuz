@@ -5,50 +5,25 @@ import './CreateBattle.css';
 import BattleDetails from './BattleDetails';
 import Confirmation from './Confirmation';
 import Overview from './Overview';
-import Payment from './Payment'
 
 class CreateBattle extends Component {
     state = {
         audienceLimit: 10,
         displayBattleDetails: true,
-        displayPaymentScreen: false,
         displayConfirmationScreen: false
     }
 
     submitBattleDetails = e => {
-        const { audienceLimit } = this.state;
         e.preventDefault();
 
-        if ( audienceLimit === 10 ) {
-            this.setState({
-                displayBattleDetails: false,
-                displayConfirmationScreen: true
-            })
-        } else {
-            this.setState({
-                displayBattleDetails: false,
-                displayPaymentScreen: true
-            })
-        }
-    }
-
-    goBackToBattleDetails = () => {
         this.setState({
-            displayBattleDetails: true,
-            displayPaymentScreen: false
-        })
-    }
-
-    submitPaymentDetails = e => {
-        e.preventDefault();
-        this.setState({
-            displayPaymentScreen: false,
+            displayBattleDetails: false,
             displayConfirmationScreen: true
         })
     }
 
     render(){
-        const { displayBattleDetails, displayPaymentScreen, displayConfirmationScreen } = this.state;
+        const { displayBattleDetails, displayConfirmationScreen } = this.state;
         return (
             <div className = "CreateBattle">
                 <Row>
@@ -57,12 +32,6 @@ class CreateBattle extends Component {
                         { displayBattleDetails ? (
                             <BattleDetails 
                                 onSubmit = { this.submitBattleDetails.bind(this) }
-                            /> 
-                        ): null }
-                        { displayPaymentScreen ? (
-                            <Payment 
-                                goBackToBattleDetails = { this.goBackToBattleDetails.bind(this) }
-                                onSubmit = { this.submitPaymentDetails.bind(this) }
                             /> 
                         ): null }
                         { displayConfirmationScreen ? <Confirmation /> : null }
