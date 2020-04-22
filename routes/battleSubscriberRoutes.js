@@ -18,7 +18,7 @@ module.exports = ( app ) => {
         const { phoneNumber } = req.body;
 
         if ( phoneNumber ) {
-            let battle = await Battle.findByIdAndUpdate(battleId, { $push: { subscribers: phoneNumber } })
+            let battle = await Battle.findByIdAndUpdate(battleId, { $addToSet: { subscribers: phoneNumber } })
 
             if ( battle ) {
                 return res.status(201).send("OK")
