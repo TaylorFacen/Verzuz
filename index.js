@@ -22,6 +22,7 @@ app.use(bodyParser.json());
 
 // IMPORT ROUTES
 require('./routes/battleRoutes')(app);
+require('./routes/battleSubscriberRoutes')(app)
 
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static('client/build'));

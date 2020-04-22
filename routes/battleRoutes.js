@@ -1,10 +1,6 @@
 const mongoose = require('mongoose');
 const Battle = mongoose.model('battles');
 
-const generateId = () => {
-    return Math.random().toString(23).substring(2, 7).toUpperCase();
-}
-
 module.exports = ( app ) => {
     app.get(`/api/battles`, async (req, res) => {
         let battles = await Battle.find({}, {
