@@ -3,7 +3,7 @@ import { Form, Button, Col } from 'react-bootstrap';
 
 export default ({ onSubmit, onChange, battleName, rounds, audienceLimit, participant1Email, participant1Name, participant2Name, participant2Email, isValid }) => (
     <div className = "BattleDetails">
-        <h1>Battle Details</h1>
+        <h2>Battle Details</h2>
         <Form onSubmit = { onSubmit }>
             <Form.Row>
                 <Form.Group controlId="battleName">

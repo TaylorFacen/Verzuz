@@ -48,8 +48,8 @@ class CreateBattle extends Component {
         return (
             <div className = "CreateBattle">
                 <Row>
-                    <Col lg = { 6 } md = { 6 } sm = { 6 } xs = { 12 } className = "overview-col"><Overview /></Col>
-                    <Col lg = { 6 } md = { 6 } sm = { 6 } xs = { 12 } className = "form-col">
+                    <Col lg = { 6 } md = { 6 } sm = { 12 } xs = { 12 } className = "overview-col"><Overview /></Col>
+                    <Col lg = { 6 } md = { 6 } sm = { 12 } xs = { 12 } className = "form-col">
                         { displayBattleDetails ? (
                             <BattleDetails 
                                 onSubmit = { this.submitBattleDetails.bind(this) }

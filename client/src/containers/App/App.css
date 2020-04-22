@@ -62,13 +62,13 @@ input:-webkit-autofill:active  {
 }
 
 .btn.cta, .btn.cta:focus, .btn.cta:active {
-    background-color: #7667DE !important;
-    border-color: #7667DE !important;
+    background-color: #815587 !important;
+    border-color: #815587 !important;
 }
 
 .btn.cta:hover:not([disabled]) {
-    background-color: #7667DE;
-    border-color: #7667DE;
+    background-color: #815587;
+    border-color: #815587;
     box-shadow: 1px 2px 4px rgba(0, 0, 0, .5);
 }
 
