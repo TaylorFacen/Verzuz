@@ -22,7 +22,9 @@ class BattleNotStarted extends Component {
 
     onSubmit = e => {
         e.preventDefault();
-        console.log(this.state)
+        this.setState({
+            displayPhoneNumberForm: false
+        })
     }
 
     render(){
@@ -32,7 +34,6 @@ class BattleNotStarted extends Component {
             <div className = "BattleNotStarted module">
                 <Image src = { Headphone } className = "hero" alt = "Headphone" />
                 <h3>{ battle.name } hasn't started yet.</h3>
-                <p>Enter your phone number below to get notified when it begins.</p>
                 { displayPhoneNumberForm ? (
                     <PhoneNumberForm 
                         phoneNumber = { phoneNumber }
