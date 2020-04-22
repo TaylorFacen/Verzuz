@@ -37,6 +37,14 @@
   }
 }
 
+h1, h2, h3 {
+    color: #333;
+}
+
+.form-group {
+    text-align: left;
+}
+
 /* Removes the Chrome autofill input color */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
@@ -58,7 +66,7 @@ input:-webkit-autofill:active  {
     border-color: #7667DE !important;
 }
 
-.btn.cta:hover {
+.btn.cta:hover:not([disabled]) {
     background-color: #7667DE;
     border-color: #7667DE;
     box-shadow: 1px 2px 4px rgba(0, 0, 0, .5);

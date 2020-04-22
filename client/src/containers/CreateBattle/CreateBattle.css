@@ -1,3 +1,32 @@
-.Overview {
+.CreateBattle > .row {
+    height: 100%
+}
+
+.CreateBattle .col-lg-6, .CreateBattle .col-md-6, .CreateBattle .col-sm-6, .CreateBattle .col-xs-6 {
+    padding: 20px 100px;
+}
+
+.overview-col {
     background-color: #7667DE;
 }
+
+.BattleDetails .form-row {
+    margin: 0px;
+}
+
+.BattleDetails .form-group {
+    width: 100%;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.BattleDetails .form-text {
+    text-align: center;
+}
+
+.BattleDetails select[disabled] {
+    background-color: white;
+    -webkit-appearance: none;
+}
+
+select[disabled]::-ms-expand {	display: none; }
