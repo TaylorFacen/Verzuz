@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { Redirect } from 'react-router-dom'
 import { Image } from 'react-bootstrap';
 
 import './PlayerLogin.css';
@@ -28,23 +27,31 @@ class PlayerLogin extends Component {
 
     componentDidMount(){
         const battleId = this.props.match.params.battleId.toUpperCase();
-        battleService.getBattle(battleId)
-        .then(battle => {
-            this.setState({
-                battle,
-                isLoading: false
-            })
-        })
-        .catch(error => {
-            if (error?.response?.status === 404 ) {
-                // Battle not found 
+
+        // Check to see if user is already authenticated
+        const verzuzCookieQuery = document.cookie.split(';').filter(c => c.substr(0, 6) === 'verzuz');
+        if (verzuzCookieQuery.length === 1) {
+            // Player is already authenticated. Redirect to battle page
+            window.location.replace(`/battles/${battleId}`)
+        } else {
+            battleService.getBattle(battleId)
+            .then(battle => {
                 this.setState({
+                    battle,
                     isLoading: false
                 })
-            } else {
-                console.log(error)
-            }
-        })
+            })
+            .catch(error => {
+                if (error?.response?.status === 404 ) {
+                    // Battle not found 
+                    this.setState({
+                        isLoading: false
+                    })
+                } else {
+                    console.log(error)
+                }
+            })
+        }
     }
 
     setCookie(battleId, userType, name) {
