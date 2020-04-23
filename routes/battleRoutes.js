@@ -37,11 +37,12 @@ module.exports = ( app ) => {
             createdOn: 1,
             roundCount: 1,
             audienceLimit: 1,
+            blacklist: 1,
             viewers: {$size: { "$ifNull": [ "$viewers", [] ] }}
         })
         
-        if ( battle ) {
-            return res.status(200).send(battle)
+        if ( battle.length > 0 ) {
+            return res.status(200).send(battle[0])
         } else {
             return res.status(404).send("Not Found")
         }  
