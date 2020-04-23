@@ -5,7 +5,7 @@ export default ({ accessCode, onChange, onSubmit }) => (
     <Form onSubmit = { onSubmit } className = "PlayerLoginForm">
     <Form.Group controlId="accessCode">
                 <Form.Control 
-                    type = "tel"
+                    type = "text"
                     value = { accessCode }
                     name = "accessCode"
                     onChange = { onChange }
