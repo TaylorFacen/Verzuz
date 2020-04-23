@@ -24,6 +24,7 @@ app.use(bodyParser.json());
 require('./routes/battleRoutes')(app);
 require('./routes/battleBlacklistRoutes')(app)
 require('./routes/battleSubscriberRoutes')(app)
+require('./routes/battleViewerRoutes')(app)
 
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static('client/build'));

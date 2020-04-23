@@ -29,14 +29,22 @@ module.exports = ( app ) => {
     app.get(`/api/battles/:battleId`, async (req, res) => {
         const { battleId } = req.params;
 
-        let battle = await Battle.findById(battleId);
+        let battle = await Battle.aggregate().match({_id: battleId}).project({
+            name: 1,
+            startedOn: 1,
+            endedOn: 1,
+            participants: 1,
+            createdOn: 1,
+            roundCount: 1,
+            audienceLimit: 1,
+            viewers: {$size: { "$ifNull": [ "$viewers", [] ] }}
+        })
+        
         if ( battle ) {
             return res.status(200).send(battle)
         } else {
             return res.status(404).send("Not Found")
-        }
-
-        
+        }  
     })
 
     app.put(`/api/battles/:battleId`, async (req, res) => {
