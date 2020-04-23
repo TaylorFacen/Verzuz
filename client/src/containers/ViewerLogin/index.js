@@ -17,6 +17,7 @@ class ViewerLogin extends Component {
         displayPhoneNumberForm: true,
         displayVerificationCodeForm: false,
         displayNameForm: false,
+        isBlocked: false,
         name: '',
         phoneNumber: '',
         verificationCode: '',
@@ -59,13 +60,25 @@ class ViewerLogin extends Component {
 
     onSubmitPhoneNumber = e => {
         e.preventDefault();
-        // Todo: Send out verification via Twilio Verify
+        const { battle, phoneNumber } = this.state;
+        // Check to see if viewer is blocked
+        const blacklist = battle.blacklist;
+        if ( blacklist.includes(phoneNumber) ) {
+            this.setState({
+                displayPhoneNumberForm: false,
+                displayVerificationCodeForm: false,
+                displayNameForm: false,
+                isBlocked: true
+            })
+        } else {
+            // Todo: Send out verification via Twilio Verify
 
-        this.setState({
-            displayPhoneNumberForm: false,
-            displayVerificationCodeForm: true,
-            displayNameForm: false
-        })
+            this.setState({
+                displayPhoneNumberForm: false,
+                displayVerificationCodeForm: true,
+                displayNameForm: false
+            })
+        }
     }
 
     onSubmitVerificationCode = e => {
@@ -126,12 +139,12 @@ class ViewerLogin extends Component {
 
     renderLoginScreens(){
         const { 
-            displayPhoneNumberForm, displayVerificationCodeForm, displayNameForm, 
+            displayPhoneNumberForm, displayVerificationCodeForm, displayNameForm, isBlocked,
             phoneNumber, verificationCode, name, battle
         } = this.state;
         return (
             <div className = "login-screens">
-                <h3>You are joining the { battle.name } battle.</h3>
+                { isBlocked ? <h3>You were blocked from joining the { battle.name } battle</h3> : <h3>You are joining the { battle.name } battle.</h3> }
                 { displayPhoneNumberForm ? (
                     <div>
                         <p>We will need to send you a one time passocde via sms.</p>
