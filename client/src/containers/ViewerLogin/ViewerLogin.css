@@ -1,0 +1,21 @@
+.ViewerLogin {
+    background-color: #F2F2F2;
+}
+
+.ViewerLogin .hero {
+    width: 175px;
+    height: auto;
+}
+
+.ViewerLogin form {
+    max-width: 300px;
+    margin: 10px auto;
+}
+
+.ViewerLogin .form-label {
+    display: block
+}
+
+.ViewerLogin .form-text, .ViewerLogin .form-label {
+    text-align: center;
+}

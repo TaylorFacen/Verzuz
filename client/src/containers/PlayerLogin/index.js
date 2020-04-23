@@ -6,6 +6,7 @@ import BattleNotFound from '../BattleNotFound';
 import PlayerLoginForm from './PlayerLoginForm';
 
 import battleService from '../../services/battleService';
+import parseCookie from '../../services/parseCookie';
 
 const Play = require('../../images/play.png')
 
@@ -27,11 +28,10 @@ class PlayerLogin extends Component {
 
     componentDidMount(){
         const battleId = this.props.match.params.battleId.toUpperCase();
+        const cookieResp = parseCookie(battleId)
 
-        // Check to see if user is already authenticated
-        const verzuzCookieQuery = document.cookie.split(';').filter(c => c.substr(0, 6) === 'verzuz');
-        if (verzuzCookieQuery.length === 1) {
-            // Player is already authenticated. Redirect to battle page
+        if ( cookieResp.hasAccess && cookieResp.data.userType === "player" ) {
+            // User is already authenticated as a player
             window.location.replace(`/battles/${battleId}`)
         } else {
             battleService.getBattle(battleId)
