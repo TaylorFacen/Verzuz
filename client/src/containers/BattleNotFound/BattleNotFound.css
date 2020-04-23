@@ -6,6 +6,6 @@
     margin: 20px 0;
 }
 
-.BattleNotFound .hero, .BattleNotStarted .hero {
+.BattleNotFound .hero {
     margin-bottom: 15px;
 }

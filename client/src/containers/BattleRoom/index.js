@@ -16,6 +16,7 @@ class BattleRoom extends Component {
     }
 
     componentDidMount(){
+        console.log(document.cookie)
         const battleId = this.props.match.params.battleId.toUpperCase();
         battleService.getBattle(battleId)
         .then(battle => {
