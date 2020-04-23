@@ -1,0 +1,11 @@
+.BattleNotFound p {
+    margin-bottom: 0px;
+}
+
+.BattleNotFound .btn {
+    margin: 20px 0;
+}
+
+.BattleNotFound .hero {
+    margin-bottom: 15px;
+}

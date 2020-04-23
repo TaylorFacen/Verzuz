@@ -82,3 +82,17 @@ input:-webkit-autofill:active  {
     color: #815587;
 }
 
+.module {
+    background-color: white;
+    padding: 20px 40px;
+    border-radius: 20px;
+    box-shadow: 1px 2px 4px rgba(0, 0, 0, .5);
+    margin: 0px auto;
+    top: 50px;
+    position: relative;
+    max-width: 700px;
+}
+
+.error-message {
+    color: #E7574E;
+}

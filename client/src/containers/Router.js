@@ -7,6 +7,8 @@ import {
 import Home from './Home';
 import BattleRoom from './BattleRoom';
 import CreateBattle from './CreateBattle';
+import PlayerLogin from './PlayerLogin';
+import ViewerLogin from './ViewerLogin';
 
 class Router extends Component {
     render(){
@@ -14,6 +16,8 @@ class Router extends Component {
             <BrowserRouter>
                 <Route exact path = '/' component = { Home } />
                 <Route exact path = '/battles/:battleId' component = { BattleRoom } />
+                <Route exact path = '/battles/:battleId/host' component = { PlayerLogin } />
+                <Route exact path = '/battles/:battleId/join' component = { ViewerLogin } />
                 <Route exact path = '/create-battle' component = { CreateBattle } />
             </BrowserRouter>
         )

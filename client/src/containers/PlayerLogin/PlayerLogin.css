@@ -1,0 +1,20 @@
+.PlayerLogin {
+    background-color: #F2F2F2;
+}
+
+.PlayerLogin .form-text {
+    text-align: center;
+}
+
+.PlayerLogin .hero {
+    margin-bottom: 15px;
+}
+
+.PlayerLogin form {
+    max-width: 300px;
+    margin: 10px auto;
+}
+
+.PlayerLogin input {
+    text-align: center;
+}
