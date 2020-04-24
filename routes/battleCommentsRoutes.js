@@ -27,6 +27,7 @@ module.exports = ( app ) => {
                     name,
                     text,
                     createdOn: Date.now(),
+                    _id: Math.random().toString(36).substr(2, 10).toUpperCase()
                 }
 
                 await Battle.findByIdAndUpdate(battleId, { $push: { commnets: comment } })

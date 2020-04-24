@@ -5,12 +5,15 @@ import NewViewerNotification from './NewViewerNotification';
 
 export default ({ comments }) => (
     <div id = "comments" className = "Comments" >
-        { comments.map(comment => {
-            if (comment.userId === "system" && comment.text === "joined") {
-                return <NewViewerNotification userName = { comment.name } key = { comment.createdOn }/>
-            } else {
-                return <Comment comment = { comment } key = { comment.createdOn }/>
-            }
-        })}
+        { comments.length > 0 ? (
+            comments.map(comment => {
+                if (comment.userId === "system" && comment.text === "joined") {
+                    return <NewViewerNotification userName = { comment.name } key = { comment._id }/>
+                } else {
+                    return <Comment comment = { comment } key = { comment._id }/>
+                }
+            })
+        ) : <p>No comments yet. Why not post one?</p>}
+        
     </div>
 )

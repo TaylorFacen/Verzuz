@@ -34,19 +34,23 @@ class BattleRoom extends Component {
 
         if ( cookieResp.hasAccess ) {
             // Viewer subscriptions
-            const { phoneNumber, userType, name } = cookieResp.data;
-            const viewerSubPromise = this.startViewerSubscription(channel, battleId, phoneNumber, userType, name);
+            const { phoneNumber, userType, name, email } = cookieResp.data;
 
-            // Battle subscriptions
-            const battleSubPromise = this.startBattleSubscription(channel, battleId);
-
-            // Comment subscriptions
-            const commentsSubPromise = this.startCommentsSubscription(channel, battleId)
-
-            Promise.all([viewerSubPromise, battleSubPromise, commentsSubPromise])
+            this.prepareViewer(channel, battleId, phoneNumber || email, userType, name)
             .then(() => {
-                this.setState({
-                    isLoading: false
+                // Running prepareViewer first to make sure new ser is added to the database before getting the viewer count
+
+                // Battle subscriptions
+                const battleSubPromise = this.startBattleSubscription(channel, battleId);
+
+                // Comment subscriptions
+                const commentsSubPromise = this.prepareComments(channel, battleId)
+
+                Promise.all([battleSubPromise, commentsSubPromise])
+                .then(() => {
+                    this.setState({
+                        isLoading: false
+                    })
                 })
             })
         } else {
@@ -54,37 +58,30 @@ class BattleRoom extends Component {
         }
     }
 
-    async startViewerSubscription(channel, battleId, phoneNumber, userType, name){
-        if ( userType !== 'player') {
-            battleService.addViewer(battleId, phoneNumber, userType, name)
-            .catch(error => console.log(error.response))
-        }
-
-        this.setState({
-            name: name,
-            phoneNumber: phoneNumber,
-            userType: userType
-        })
-
+    async startViewerSubscription(channel, phoneNumber){
         // New Viewer
         channel.bind('new-viewer', data => {
+            const comment = {
+                createdOn: Date.now(),
+                text: "joined",
+                name: data.viewer.name,
+                userId: "system",
+                _id: Math.random().toString(36).substr(2, 10).toUpperCase()
+            }
+
             this.setState(prevState => {
                 const { comments } = prevState;
-                comments.push({
-                    createdOn: data.viewer.joinedOn,
-                    text: "joined",
-                    name: data.viewer.name,
-                    userId: "system"
-                });
-
+                // Makes sure not to include duplicate contacts
+                const oldComments = comments.filter(c => c._id !== comment._id)
+                oldComments.push(comment);
                 return {
-                    comments,
+                    comments: oldComments,
                     viewers: prevState.viewers + 1
-                };
-            });
+                }
+            })
         })
 
-        // Boot Viewer
+        // Boot User
         channel.bind('boot-viewer', data => {
             if ( phoneNumber === data.phoneNumber ) {
                 // Remove all subscriptions
@@ -94,35 +91,66 @@ class BattleRoom extends Component {
         })
     }
 
+    async prepareViewer(channel, battleId, contact, userType, name) {
+        this.startViewerSubscription(channel, contact)
+        .then(() => {
+            if ( userType !== 'player') {
+                battleService.addViewer(battleId, contact, userType, name)
+                .then(() => {
+                    this.setState({
+                        name: name,
+                        phoneNumber: contact,
+                        userType: userType
+                    })
+                })
+                .catch(error => console.log(error.response))
+            } else {
+                this.setState({
+                    name: name,
+                    email: contact,
+                    userType: userType
+                })
+            }
+        })
+        .catch(error => console.log(error))
+    }
+
     async startBattleSubscription(channel, battleId) {
         const battle = await battleService.getBattle(battleId);
 
-        this.setState(prevState => ({
-            viewers: prevState.viewers + battle.viewers,
-            battleName: battle.name,
-            participants: battle.participants,
-            roundCount: battle.roundCount,
-            currentRound: battle.currentRound
-        }))
+        this.setState(prevState => {
+            return {
+                viewers: battle.viewers,
+                battleName: battle.name,
+                participants: battle.participants,
+                roundCount: battle.roundCount,
+                currentRound: battle.currentRound
+            }
+        })
     }
 
-    async startCommentsSubscription(channel, battleId) {
+    async startCommentsSubscription(channel) {
         channel.bind('new-comment', data => {
+            const { comment } = data;
             this.setState(prevState => {
                 const { comments } = prevState;
-                comments.push(data.comment);
+                const oldComments = comments.filter(c => c._id !== comment._id)
+                oldComments.push(comment)
 
-                return {
-                    comments
-                };
-            });
-        });
+                return { comments: oldComments }
+            })
+        })
+    }
 
-        const comments = await battleService.getComments(battleId);
-
-        this.setState(prevState => ({
-            comments: prevState.comments.concat(comments)
-        }))
+    async prepareComments(channel, battleId) {
+        this.startCommentsSubscription(channel)
+        .then(async () => {
+            const resp = await battleService.getComments(battleId);
+            this.setState(prevState => ({
+                comments: prevState.comments.concat(resp.comments)
+            }))
+        })
+        .catch(error => console.log(error))
     }
 
     onChange = e => {
@@ -142,8 +170,8 @@ class BattleRoom extends Component {
                     <Col xl = {9} lg = {9} md = {9} sm = {12} xs = {12} className = "battle-room-details">
                         <Row className = "participants">
                             { participants.map(p => (
-                                <Col>
-                                    <VideoPlayer playerName = { p.name } key = { p.email } />
+                                <Col key = { p.email } >
+                                    <VideoPlayer playerName = { p.name } />
                                 </Col>
                             ))}
                         </Row>
