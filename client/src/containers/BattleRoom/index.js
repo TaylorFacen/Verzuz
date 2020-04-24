@@ -1,7 +1,10 @@
 import React, { Component } from "react";
+import { Row, Col } from 'react-bootstrap';
 import Pusher from 'pusher-js';
 
 import './BattleRoom.css';
+import Comments from './Comments';
+import VideoPlayer from './VideoPlayer';
 import ViewerCount from './ViewerCount';
 
 import battleService from '../../services/battleService';
@@ -9,13 +12,15 @@ import parseCookie from '../../services/parseCookie';
 
 class BattleRoom extends Component {
     state = {
-        battle: null,
+        battleName: '',
         isLoading: true,
         phoneNumber: '',
         userType: '',
         name: '',
         comments: [],
         viewers: 0,
+        participants: [],
+        currentRound: 1
     }
 
     componentDidMount(){
@@ -96,7 +101,8 @@ class BattleRoom extends Component {
             viewers: prevState.viewers + battle.viewers,
             battleName: battle.name,
             participants: battle.participants,
-            roundCount: battle.roundCount
+            roundCount: battle.roundCount,
+            currentRound: battle.currentRound
         }))
     }
 
@@ -127,11 +133,26 @@ class BattleRoom extends Component {
     }
 
     render(){
-        const { viewers, isLoading } = this.state;
+        const { viewers, comments, battleName, participants, isLoading } = this.state;
 
         return !isLoading ? (
             <div className = "BattleRoom">
-                <ViewerCount viewerCount = { viewers } />
+                <h1>{ battleName }</h1>
+                <Row className = "battle">
+                    <Col xl = {9} lg = {9} md = {9} sm = {12} xs = {12} className = "battle-room-details">
+                        <Row className = "participants">
+                            { participants.map(p => (
+                                <Col>
+                                    <VideoPlayer playerName = { p.name } key = { p.email } />
+                                </Col>
+                            ))}
+                        </Row>
+                    </Col>
+                    <Col xl = {3} lg = {3} md = {3} sm = {12} xs = {12} className = "battle-room-social">
+                        <ViewerCount viewerCount = { viewers } />
+                        <Comments comments = { comments } />
+                    </Col>
+                </Row>
             </div>
         ) : null
     }

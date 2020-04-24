@@ -13,6 +13,8 @@ const battleSchema = new Schema({
     blacklist: Array,
     viewers: Array,
     comments: Array,
+    currentRound: Number,
+    currentTurn: String,
     createdOn: { type: Date, required: true, default: Date.now }
 })
 

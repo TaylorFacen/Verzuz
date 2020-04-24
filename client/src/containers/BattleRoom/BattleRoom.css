@@ -1,23 +1,55 @@
 .BattleRoom {
-    background-color: #F2F2F2;
+    padding: 0px 10px;
+}
+
+.BattleRoom h1 {
+    margin-bottom: 0px;
 }
 
 .BattleRoom .ViewerCount {
-    display: flex;
-    flex-direction: column;
     padding: 5px;
     width: 75px;
-    height: 75px;
     justify-content: center;
-    border-radius: 5px;
+    margin: 0px 0px 10px auto;
 }
 
 .BattleRoom .ViewerCount .viewer-count {
     font-weight: bold;
-    font-size: 24px;
+    margin-right: 5px;
 }
 
 .BattleRoom .ViewerCount .viewer-text {
     font-weight: light;
     color: #333333
+}
+
+.BattleRoom .battle-room-details, .BattleRoom .battle-room-social {
+    padding: 0px;
+}
+
+.VideoPlayer.module {
+    margin: 10px 0;
+    width: 100%;
+    min-width: 300px;
+    padding: 0;
+}
+
+.VideoPlayer .player-name {
+    background-color:  #333333;
+    color: white;
+    font-weight: bold;
+    padding: 5px;
+}
+
+.VideoPlayer .video {
+    height: 35vh;
+}
+
+.participants {
+    justify-content: stretch;
+    padding: 0px 10px;
+}
+
+.BattleRoom .Comments {
+    height: 80vh;
 }
