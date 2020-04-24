@@ -1,5 +1,4 @@
-import pusher from './pusher';
-
+const pusher = require('./pusher');
 const mongoose = require('mongoose');
 const Battle = mongoose.model('battles');
 

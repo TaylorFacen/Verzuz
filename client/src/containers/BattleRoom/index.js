@@ -25,17 +25,18 @@ class BattleRoom extends Component {
             cluster: process.env.REACT_APP_PUSHER_APP_CLUSTER,
             encrypted: true
         });
-        const channel = pusher.subscribe(roomId);
+        const channel = pusher.subscribe(battleId);
 
         if ( cookieResp.hasAccess ) {
             // Viewer subscriptions
-            const viewerSubPromise = startViewerSubscription(channel, battleId, cookieResp.phoneNumber, cookieResp.userType, cookieResp.name);
+            const { phoneNumber, userType, name } = cookieResp.data;
+            const viewerSubPromise = this.startViewerSubscription(channel, battleId, phoneNumber, userType, name);
 
             // Battle subscriptions
-            const battleSubPromise = startBattleSubscription(channel, battleId);
+            const battleSubPromise = this.startBattleSubscription(channel, battleId);
 
             // Comment subscriptions
-            const commentsSubPromise = startCommentsSubscription(channel, battleId)
+            const commentsSubPromise = this.startCommentsSubscription(channel, battleId)
 
             Promise.all([viewerSubPromise, battleSubPromise, commentsSubPromise])
             .then(() => {
@@ -51,6 +52,7 @@ class BattleRoom extends Component {
     async startViewerSubscription(channel, battleId, phoneNumber, userType, name){
         if ( userType !== 'player') {
             battleService.addViewer(battleId, phoneNumber, userType, name)
+            .catch(error => console.log(error.response))
         }
 
         this.setState({
@@ -67,7 +69,7 @@ class BattleRoom extends Component {
                     timestamp: data.viewer.joinedOn,
                     comment: "joined",
                     "userName": "system",
-                    "userName": "system"
+                    "userId": "system"
                 });
 
                 return {

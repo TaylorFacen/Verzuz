@@ -1,17 +1,16 @@
-import pusher from './pusher';
-
+const pusher = require('./pusher')
 const mongoose = require('mongoose');
 const Battle = mongoose.model('battles');
 
 // Helper Functions //
-const isViewerInBattle = (battleId, phoneNumber) => {
-    const battle = Battle.findById(battleId);
+const isViewerInBattle = async (battleId, phoneNumber) => {
+    const battle = await Battle.findById(battleId);
     const viewers = battle.viewers;
 
     return viewers.filter(v => v.phoneNumber === phoneNumber).length > 0;
 }
 
-const addViewer = (battleId, viewer) => {
+const addViewer = async (battleId, viewer) => {
     // Add viewer record
     const battle = await Battle.findByIdAndUpdate(battleId, { $push: { viewers: viewer } })
 
@@ -24,15 +23,15 @@ const addViewer = (battleId, viewer) => {
     }
 }
 
-const handleExistingViewer = (battleId, phoneNumber, name) => {
+const handleExistingViewer = async (battleId, phoneNumber, name) => {
     // Get viewer record
-    const battle = Battle.findById(battleId);
+    const battle = await Battle.findById(battleId);
     const viewers = battle.viewers;
     const viewer = viewers.filter(v => v.phoneNumber === phoneNumber)[0];
 
     if (!!viewer.leftOn) {
         // Viewer once left in the past
-        const updatedBattle = await Battle.update(
+        const updatedBattle = await Battle.updateOne(
             { "_id": battleId, "viewers.phoneNumber": phoneNumber },
             { "$unset": { "viewers.$.leftOn": 1}, "$set": {"viewers.$.name": name}}
         );
@@ -40,7 +39,7 @@ const handleExistingViewer = (battleId, phoneNumber, name) => {
         const resp = pusher.addViewer(battleId, viewer);
         return {updatedBattle, resp}
     } else {
-        const updatedBattle = await Battle.update(
+        const updatedBattle = await Battle.updateOne(
             { "_id": battleId, "viewers.phoneNumber": phoneNumber },
             { "$set": {"viewers.$.name": name}}
         );

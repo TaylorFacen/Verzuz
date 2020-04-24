@@ -8,7 +8,7 @@ const pusher =  new Pusher({
     useTLS: true
 });
 
-export default {
+module.exports = {
     bootViewer: (battleId, phoneNumber, reason) => {
         pusher.trigger(battleId, 'boot-viewer', {
             phoneNumber: phoneNumber,

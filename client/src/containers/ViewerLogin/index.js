@@ -37,7 +37,6 @@ class ViewerLogin extends Component {
         } else {
             battleService.getBattle(battleId)
             .then(battle => {
-                console.log(battle)
                 this.setState({
                     isLoading: false,
                     battle
@@ -240,7 +239,6 @@ class ViewerLogin extends Component {
 
     renderSubscriptionScreens(){
         const { displayPhoneNumberForm, phoneNumber, battle } = this.state;
-        console.log(battle)
         return (
             <div className = "subscription-screen">
                 <h3>{ battle.name } hasn't started yet.</h3>
