@@ -16,14 +16,14 @@ module.exports = ( app ) => {
 
     app.post(`/api/battles/:battleId/comments`, async (req, res) => {
         const { battleId } = req.params;
-        const { phoneNumber, name, text } = req.body;
+        const { email, phoneNumber, name, text } = req.body;
 
         if ( phoneNumber && name && text ) {
             const battle = await Battle.findById(battleId);
 
             if ( battle ) {
                 const comment = {
-                    phoneNumber,
+                    userId: phoneNumber || email,
                     name,
                     text,
                     createdOn: Date.now(),

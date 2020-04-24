@@ -3,7 +3,7 @@ import { Row, Col } from 'react-bootstrap';
 import Pusher from 'pusher-js';
 
 import './BattleRoom.css';
-import Comments from './Comments';
+import CommentsSection from './CommentsSection';
 import VideoPlayer from './VideoPlayer';
 import ViewerCount from './ViewerCount';
 
@@ -71,10 +71,10 @@ class BattleRoom extends Component {
             this.setState(prevState => {
                 const { comments } = prevState;
                 comments.push({
-                    timestamp: data.viewer.joinedOn,
-                    comment: "joined",
-                    "userName": "system",
-                    "userId": "system"
+                    createdOn: data.viewer.joinedOn,
+                    text: "joined",
+                    name: data.viewer.name,
+                    userId: "system"
                 });
 
                 return {
@@ -150,7 +150,7 @@ class BattleRoom extends Component {
                     </Col>
                     <Col xl = {3} lg = {3} md = {3} sm = {12} xs = {12} className = "battle-room-social">
                         <ViewerCount viewerCount = { viewers } />
-                        <Comments comments = { comments } />
+                        <CommentsSection comments = { comments } />
                     </Col>
                 </Row>
             </div>

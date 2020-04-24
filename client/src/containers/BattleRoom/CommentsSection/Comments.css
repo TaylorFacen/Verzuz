@@ -1,0 +1,32 @@
+.CommentsSection {
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.Comments {
+    overflow: scroll;
+}
+
+.CommentsSection p {
+    margin-bottom: 0px;
+}
+
+.NewViewerNotification, .Comment {
+    border-top: 2px solid #F2F2F2;
+    padding: 2px;
+}
+
+.CommentsSection.module {
+    padding: 10px;
+}
+
+.CommentsSection .user-name {
+    color: #815587;
+    font-weight: bold;
+}
+
+.Comment {
+    text-align: left;
+}
