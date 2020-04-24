@@ -12,6 +12,7 @@ const battleSchema = new Schema({
     subscribers: Array,
     blacklist: Array,
     viewers: Array,
+    comments: Array,
     createdOn: { type: Date, required: true, default: Date.now }
 })
 
