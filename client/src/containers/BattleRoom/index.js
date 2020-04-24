@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import Pusher from 'pusher-js';
 
 import './BattleRoom.css';
-import BattleEnded from './BattleEnded';
+import ViewerCount from './ViewerCount';
 
 import battleService from '../../services/battleService';
 import parseCookie from '../../services/parseCookie';
@@ -127,11 +127,11 @@ class BattleRoom extends Component {
     }
 
     render(){
-        const { battle, isLoading } = this.state;
+        const { viewers, isLoading } = this.state;
 
         return !isLoading ? (
             <div className = "BattleRoom">
-                { !!battle & !!battle?.startedOn & !!battle?.endedOn ? <BattleEnded /> : null }
+                <ViewerCount viewerCount = { viewers } />
             </div>
         ) : null
     }

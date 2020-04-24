@@ -38,7 +38,15 @@ module.exports = ( app ) => {
             roundCount: 1,
             audienceLimit: 1,
             blacklist: 1,
-            viewers: {$size: { "$ifNull": [ "$viewers", [] ] }}
+            viewers: {
+                $size: {
+                    "$filter": {
+                        "input": "$viewers",
+                        "as": "item",
+                        "cond": { "$eq": [ "$$item.leftOn", null ] }
+                    }
+                }
+            }
         })
         
         if ( battle.length > 0 ) {

@@ -1,3 +1,23 @@
 .BattleRoom {
     background-color: #F2F2F2;
 }
+
+.BattleRoom .ViewerCount {
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    width: 75px;
+    height: 75px;
+    justify-content: center;
+    border-radius: 5px;
+}
+
+.BattleRoom .ViewerCount .viewer-count {
+    font-weight: bold;
+    font-size: 24px;
+}
+
+.BattleRoom .ViewerCount .viewer-text {
+    font-weight: light;
+    color: #333333
+}

@@ -78,7 +78,7 @@ module.exports = ( app ) => {
             const battle = await Battle.findById(battleId);
 
             if ( battle ) {
-                const viewerInBattle = isViewerInBattle(battleId, phoneNumber);
+                const viewerInBattle = await isViewerInBattle(battleId, phoneNumber);
 
                 if ( viewerInBattle ) {
                     handleExistingViewer(battleId, phoneNumber, name);
@@ -89,6 +89,7 @@ module.exports = ( app ) => {
                         name,
                         userType,
                         joinedOn: Date.now(),
+                        leftOn: null
                     }
                     addViewer(battleId, viewer)
                     return res.status(201).send("OK")
