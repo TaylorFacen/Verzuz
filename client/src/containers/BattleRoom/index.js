@@ -121,10 +121,22 @@ class BattleRoom extends Component {
         const { userType, name, email, phoneNumber } = cookieData
 
         if (userType === 'player') {
-            this.setState({
-                name: name,
-                email: email,
-                userType: userType,
+            this.setState(prevState => {
+                // Add user just in case the new-viewer action hasn't triggered yet
+                const viewers = prevState.viewers;
+                viewers.push({
+                    phoneNumber: phoneNumber,
+                    name: name,
+                    userType: userType,
+                    joinedOn: Date.now(),
+                    leftOn: null
+                })
+                return {
+                    name: name,
+                    email: email,
+                    userType: userType,
+                    viewers: viewers
+                }
             })
         } else {
             battleService.addViewer(battleId, phoneNumber, userType, name)
