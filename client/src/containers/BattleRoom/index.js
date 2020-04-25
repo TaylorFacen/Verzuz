@@ -84,7 +84,7 @@ class BattleRoom extends Component {
                 const allComments = comments.filter(c => c._id !== comment._id)
                 allComments.push(comment);
 
-                const allViewers = viewers.filter(v => v.phoneNumber !== contact)
+                const allViewers = viewers.filter(v => v.phoneNumber !== viewer.phoneNumber)
                 allViewers.push(newViewer)
 
                 return {
@@ -186,7 +186,7 @@ class BattleRoom extends Component {
 
     render(){
         const { viewers, comments, battleName, participants, isLoading } = this.state;
-        console.log(comments)
+
         return !isLoading ? (
             <div className = "BattleRoom">
                 <h1>{ battleName }</h1>
