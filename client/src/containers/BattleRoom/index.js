@@ -157,13 +157,11 @@ class BattleRoom extends Component {
 
             this.setState(prevState => {
                 // Make sure there are no duplicates
-                const allViewers = prevState.viewers;
-                allViewers.push(viewers)
+                const allViewers = prevState.viewers.concat(viewers);
                 const uniqueViewers = Array.from(new Set(allViewers.map(v => v.phoneNumber)))
                 .map(phoneNumber => allViewers.find(v => v.phoneNumber === phoneNumber))
 
-                const allComments = prevState.comments;
-                allComments.push(comments);
+                const allComments = prevState.comments.concat(comments);
                 const uniqueComments = Array.from(new Set(allComments.map(c => c._id)))
                 .map(id => allComments.find(c => c._id === id))
 
@@ -188,7 +186,7 @@ class BattleRoom extends Component {
 
     render(){
         const { viewers, comments, battleName, participants, isLoading } = this.state;
-
+        console.log(comments)
         return !isLoading ? (
             <div className = "BattleRoom">
                 <h1>{ battleName }</h1>
@@ -203,7 +201,7 @@ class BattleRoom extends Component {
                         </Row>
                     </Col>
                     <Col xl = {3} lg = {3} md = {3} sm = {12} xs = {12} className = "battle-room-social">
-                        <ViewerCount viewerCount = { viewers } />
+                        <ViewerCount viewers = { viewers } />
                         <CommentsSection comments = { comments } />
                     </Col>
                 </Row>

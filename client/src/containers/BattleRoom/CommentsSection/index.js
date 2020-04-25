@@ -22,7 +22,6 @@ class CommentsSection extends Component {
         const { comments } = this.props;
         const sortedComments = comments.sort((c1, c2) => c1.createdOn >= c2.createdOn ? 1 : -1 )
         // Make sure to sort comments by timestamp
-
         return (
             <div className = "CommentsSection module">
                 <Comments comments = { sortedComments } />
