@@ -18,7 +18,7 @@ class BattleRoom extends Component {
         userType: '',
         name: '',
         comments: [],
-        viewers: 0,
+        viewers: [],
         participants: [],
         currentRound: 1
     }
