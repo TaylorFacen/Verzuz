@@ -54,14 +54,14 @@ const handleExistingViewer = async (battleId, phoneNumber, name) => {
 module.exports = ( app ) => {
     app.get(`/api/battles/:battleId/viewers`, async (req, res) => {
         const { battleId } = req.params;
-        const { phoneNumber } = req.query;
+        const { active } = req.query;
         const battle = await Battle.findById(battleId);
 
         if ( battle ) {
             const viewers = battle.viewers;
-            if ( phoneNumber ) {
-                const viewer = viewers.filter(v => v.phoneNumber === phoneNumber )
-                return res.status(201).send({viewer: viewer})
+            if ( active.toLowerCase() === 'true' ) {
+                const activeViewers = viewers.filter(v => !v.leftOn )
+                return res.status(201).send({viewers: activeViewers})
             } else {
                 return res.status(201).send({viewers: viewers})
             }

@@ -17,8 +17,8 @@ export default {
         let res = await axios.post(`/api/battles/${battleId}/viewers`, { phoneNumber: phoneNumber, userType: userType, name: name})
         return res.data || {};
     },
-    getViewers: async battleId => {
-        let res = await axios.get(`/api/battles/${battleId}/viewers`)
+    getViewers: async (battleId, active = true) => {
+        let res = await axios.get(`/api/battles/${battleId}/viewers?active=${active}`)
         return res.data || {};
     },
     addSubscriber: async (battleId, phoneNumber ) => {

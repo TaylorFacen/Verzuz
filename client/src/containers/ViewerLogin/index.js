@@ -261,7 +261,7 @@ class ViewerLogin extends Component {
     }
 
     render(){
-        const {isLoading, battle} = this.state;
+        const {isLoading, battle } = this.state;
 
         return !isLoading && (
             <div className = "ViewerLogin">

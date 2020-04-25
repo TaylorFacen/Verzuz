@@ -26,27 +26,21 @@ class BattleRoom extends Component {
     componentDidMount(){
         const battleId = this.props.match.params.battleId.toUpperCase();
         const cookieResp = parseCookie(battleId)
-        const pusher = new Pusher(process.env.REACT_APP_PUSHER_APP_KEY, {
-            cluster: process.env.REACT_APP_PUSHER_APP_CLUSTER,
-            encrypted: true
-        });
-        const channel = pusher.subscribe(battleId);
 
         if ( cookieResp.hasAccess ) {
             // Viewer subscriptions
-            const { phoneNumber, userType, name, email } = cookieResp.data;
+            const cookieData = cookieResp.data;
 
-            this.prepareViewer(channel, battleId, phoneNumber || email, userType, name)
+            // Set the user
+            this.setUser(battleId, cookieData)
             .then(() => {
-                // Running prepareViewer first to make sure new ser is added to the database before getting the viewer count
+                // Start subscriptions
+                const subscriptionPromise = this.startSubscriptions(battleId, cookieData.phoneNumber || cookieData.email)
 
-                // Battle subscriptions
-                const battleSubPromise = this.startBattleSubscription(channel, battleId);
+                // Get data
+                const dataPromise = this.getData(battleId)
 
-                // Comment subscriptions
-                const commentsSubPromise = this.prepareComments(channel, battleId)
-
-                Promise.all([battleSubPromise, commentsSubPromise])
+                Promise.all([subscriptionPromise, dataPromise])
                 .then(() => {
                     this.setState({
                         isLoading: false
@@ -58,99 +52,131 @@ class BattleRoom extends Component {
         }
     }
 
-    async startViewerSubscription(channel, phoneNumber){
+    async startSubscriptions(battleId, contact){
+        const pusher = new Pusher(process.env.REACT_APP_PUSHER_APP_KEY, {
+            cluster: process.env.REACT_APP_PUSHER_APP_CLUSTER,
+            encrypted: true
+        });
+        const channel = pusher.subscribe(battleId);
+
         // New Viewer
         channel.bind('new-viewer', data => {
+            const { viewer } = data;
             const comment = {
                 createdOn: Date.now(),
                 text: "joined",
-                name: data.viewer.name,
+                name: viewer.name,
                 userId: "system",
                 _id: Math.random().toString(36).substr(2, 10).toUpperCase()
             }
 
+            const newViewer = {
+                phoneNumber: viewer.phoneNumber,
+                name: viewer.name,
+                userType: viewer.userType,
+                joinedOn: viewer.joinedOn,
+                leftOn: null
+            }
+
             this.setState(prevState => {
-                const { comments } = prevState;
+                const { comments, viewers } = prevState;
                 // Makes sure not to include duplicate contacts
-                const oldComments = comments.filter(c => c._id !== comment._id)
-                oldComments.push(comment);
+                const allComments = comments.filter(c => c._id !== comment._id)
+                allComments.push(comment);
+
+                const allViewers = viewers.filter(v => v.phoneNumber !== contact)
+                allViewers.push(newViewer)
+
                 return {
-                    comments: oldComments,
-                    viewers: prevState.viewers + 1
+                    comments: allComments,
+                    viewers: allViewers
                 }
             })
         })
 
         // Boot User
         channel.bind('boot-viewer', data => {
-            if ( phoneNumber === data.phoneNumber ) {
+            if ( contact === data.phoneNumber ) {
                 // Remove all subscriptions
+                pusher.unsubscribe(battleId)
 
                 // Display boot reason (e.g. New session, blocked from battle, battle ended)
             }
         })
-    }
 
-    async prepareViewer(channel, battleId, contact, userType, name) {
-        this.startViewerSubscription(channel, contact)
-        .then(() => {
-            if ( userType !== 'player') {
-                battleService.addViewer(battleId, contact, userType, name)
-                .then(() => {
-                    this.setState({
-                        name: name,
-                        phoneNumber: contact,
-                        userType: userType
-                    })
-                })
-                .catch(error => console.log(error.response))
-            } else {
-                this.setState({
-                    name: name,
-                    email: contact,
-                    userType: userType
-                })
-            }
-        })
-        .catch(error => console.log(error))
-    }
-
-    async startBattleSubscription(channel, battleId) {
-        const battle = await battleService.getBattle(battleId);
-
-        this.setState(prevState => {
-            return {
-                viewers: battle.viewers,
-                battleName: battle.name,
-                participants: battle.participants,
-                roundCount: battle.roundCount,
-                currentRound: battle.currentRound
-            }
-        })
-    }
-
-    async startCommentsSubscription(channel) {
+        // New Comment
         channel.bind('new-comment', data => {
             const { comment } = data;
             this.setState(prevState => {
                 const { comments } = prevState;
-                const oldComments = comments.filter(c => c._id !== comment._id)
-                oldComments.push(comment)
+                const allComments = comments.filter(c => c._id !== comment._id)
+                allComments.push(comment)
 
-                return { comments: oldComments }
+                return { comments: allComments }
             })
         })
     }
 
-    async prepareComments(channel, battleId) {
-        this.startCommentsSubscription(channel)
-        .then(async () => {
-            const resp = await battleService.getComments(battleId);
-            this.setState(prevState => ({
-                comments: prevState.comments.concat(resp.comments)
-            }))
+    async setUser(battleId, cookieData) {
+        const { userType, name, email, phoneNumber } = cookieData
+
+        if (userType === 'player') {
+            this.setState({
+                name: name,
+                email: email,
+                userType: userType,
+            })
+        } else {
+            battleService.addViewer(battleId, phoneNumber, userType, name)
+            .then(() => {
+                this.setState({
+                    name: name,
+                    phoneNumber: phoneNumber,
+                    userType: userType
+                })
+            })
+            .catch(error => console.log(error))
+        }
+    }
+
+    async getData(battleId){
+        // Battle Data
+        const battlePromise =  battleService.getBattle(battleId);
+        
+        // Viewers
+        const viewersPromise =  battleService.getViewers(battleId, true);
+
+        // Comments
+        const commentsPromise =  battleService.getComments(battleId)
+
+        Promise.all([battlePromise, viewersPromise, commentsPromise])
+        .then(responses => {
+            const battle = responses[0];
+            const viewers = responses[1].viewers;
+            const comments = responses[2].comments   
+
+            this.setState(prevState => {
+                // Make sure there are no duplicates
+                const allViewers = prevState.viewers;
+                allViewers.push(viewers)
+                const uniqueViewers = Array.from(new Set(allViewers.map(v => v.phoneNumber)))
+                .map(phoneNumber => allViewers.find(v => v.phoneNumber === phoneNumber))
+
+                const allComments = prevState.comments;
+                allComments.push(comments);
+                const uniqueComments = Array.from(new Set(allComments.map(c => c._id)))
+                .map(id => allComments.find(c => c._id === id))
+
+                return {
+                    viewers: uniqueViewers,
+                    battleName: battle.name,
+                    participants: battle.participants,
+                    roundCount: battle.roundCount,
+                    currentRound: battle.currentRound,
+                    comments: uniqueComments
+                }
+            })
         })
-        .catch(error => console.log(error))
     }
 
     onChange = e => {
