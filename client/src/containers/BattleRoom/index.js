@@ -5,6 +5,7 @@ import Pusher from 'pusher-js';
 import './BattleRoom.css';
 import CommentsSection from './CommentsSection';
 import Navigation from './Navigation';
+import PlayerControls from './PlayerControls';
 import VideoPlayer from './VideoPlayer';
 import ViewerCount from './ViewerCount';
 
@@ -122,6 +123,11 @@ class BattleRoom extends Component {
                 return { comments: allComments }
             })
         })
+
+        // Battle Ended
+        channel.bind('end-battle', data => {
+            console.log("Battle ended")
+        })
     }
 
     async setUser(battleId, cookieData) {
@@ -195,7 +201,9 @@ class BattleRoom extends Component {
                     participants: battle.participants,
                     roundCount: battle.roundCount,
                     currentRound: battle.currentRound,
-                    comments: uniqueComments
+                    comments: uniqueComments,
+                    startedOn: battle.startedOn,
+                    endedOn: battle.endedOn
                 }
             })
         })
@@ -224,8 +232,34 @@ class BattleRoom extends Component {
         })
     }
 
+    async startBattle(){
+        const battleId = this.props.match.params.battleId.toUpperCase();
+
+        battleService.startBattle(battleId)
+        .then(() => {
+            this.setState({
+                startedOn: Date.now()
+            })
+        })
+        .catch(error => console.log(error))
+    }
+
+    async endBattle(){
+        const battleId = this.props.match.params.battleId.toUpperCase();
+
+        battleService.endBattle(battleId)
+        .then(() => {
+            this.setState({
+                endedOn: Date.now()
+            })
+        })
+        .catch(error => console.log(error))
+    }
+
     render(){
-        const { viewers, comments, battleName, participants, isLoading, name, phoneNumber, email } = this.state;
+        const { battleName, startedOn, endedOn } = this.state;
+        const { viewers, comments, participants } = this.state;
+        const { isLoading, name, phoneNumber, email, userType } = this.state;
 
         return !isLoading ? (
             <div className = "BattleRoom">
@@ -243,6 +277,14 @@ class BattleRoom extends Component {
                                 </Col>
                             ))}
                         </Row>
+                        { userType === 'player' ? (
+                            <PlayerControls 
+                                startedOn = { startedOn }
+                                endedOn = { endedOn }
+                                startBattle = { this.startBattle.bind(this) }
+                                endBattle = { this.endBattle.bind(this) }
+                            />
+                        ) : null}
                     </Col>
                     <Col xl = {3} lg = {3} md = {3} sm = {12} xs = {12} className = "battle-room-social">
                         <ViewerCount viewers = { viewers } />
