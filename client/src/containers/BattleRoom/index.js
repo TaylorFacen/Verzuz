@@ -3,9 +3,9 @@ import { Row, Col } from 'react-bootstrap';
 import Pusher from 'pusher-js';
 
 import './BattleRoom.css';
-import { StartBattleButton, EndBattleButton } from './Buttons';
 import CommentsSection from './CommentsSection';
 import Navigation from './Navigation';
+import PlayerControls from './PlayerControls';
 import VideoPlayer from './VideoPlayer';
 import ViewerCount from './ViewerCount';
 
@@ -261,10 +261,12 @@ class BattleRoom extends Component {
                             ))}
                         </Row>
                         { userType === 'player' ? (
-                            <Row className = "battle-buttons">
-                                { !startedOn && !endedOn ? <StartBattleButton startBattle = { this.startBattle.bind(this) }/> : null }
-                                { !!startedOn && !endedOn ? <EndBattleButton endBattle = { this.endBattle.bind(this) } /> : null }
-                            </Row>
+                            <PlayerControls 
+                                startedOn = { startedOn }
+                                endedOn = { endedOn }
+                                startBattle = { this.startBattle.bind(this) }
+                                endBattle = { this.endBattle.bind(this) }
+                            />
                         ) : null}
                     </Col>
                     <Col xl = {3} lg = {3} md = {3} sm = {12} xs = {12} className = "battle-room-social">
