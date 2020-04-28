@@ -16,27 +16,29 @@ module.exports = ( app ) => {
 
     app.post(`/api/battles/:battleId/comments`, async (req, res) => {
         const { battleId } = req.params;
-        const { email, phoneNumber, name, text } = req.body;
+        const { userId, name, text } = req.body;
 
-        if ( phoneNumber && name && text ) {
+        if ( userId && name && text ) {
             const battle = await Battle.findById(battleId);
 
             if ( battle ) {
                 const comment = {
-                    userId: phoneNumber || email,
+                    userId: userId,
                     name,
                     text,
                     createdOn: Date.now(),
                     _id: Math.random().toString(36).substr(2, 10).toUpperCase()
                 }
 
-                await Battle.findByIdAndUpdate(battleId, { $push: { commnets: comment } })
-                pusher.addComment(battleId, comment)
+                const updatedBattle = await Battle.findByIdAndUpdate(battleId, { $push: { comments: comment } })
+                await pusher.addComment(battleId, comment)
+                return res.status(201).send("OK")
+                
             } else {
                 return res.status(404).send("Not Found")
             }
         } else {
-            return res.status(400).send("phoneNumber, name, and text required")
+            return res.status(400).send("userId (phoneNumber or email), name, and text required")
         }
     })
 }

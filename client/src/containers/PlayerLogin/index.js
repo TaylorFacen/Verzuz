@@ -54,13 +54,14 @@ class PlayerLogin extends Component {
         }
     }
 
-    setCookie(battleId, userType, name) {
+    setCookie(battleId, userType, name, email) {
         return new Promise((resolve, reject) => {
             let expirationDate = new Date(Date.now() + 86400e3).toUTCString();
             const cookieData = JSON.stringify({
                 userType: userType,
                 name: name,
-                battleId: battleId
+                battleId: battleId,
+                email: email
             })
             const uriEncodedCookieData = encodeURI(cookieData)
             document.cookie = `verzuz=${uriEncodedCookieData}; expires=${expirationDate}; path=/;`;
@@ -81,7 +82,7 @@ class PlayerLogin extends Component {
             })
 
             // Set cookie
-            this.setCookie(battle._id, "player", participant.name)
+            this.setCookie(battle._id, "player", participant.name, participant.email)
             .then(() => {
                 // Redirect to battle page
                 window.location.replace(`/battles/${battle._id}`)

@@ -20,7 +20,7 @@ module.exports = {
             viewer: viewer
         })
     },
-    addComment: (battleId, comment) => {
+    addComment: async (battleId, comment) => {
         pusher.trigger(battleId, 'new-comment', {
             comment: comment
         })

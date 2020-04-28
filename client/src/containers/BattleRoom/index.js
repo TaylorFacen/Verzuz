@@ -113,10 +113,11 @@ class BattleRoom extends Component {
         // New Comment
         channel.bind('new-comment', data => {
             const { comment } = data;
+
             this.setState(prevState => {
                 const { comments } = prevState;
-                const allComments = comments.filter(c => c._id !== comment._id)
-                allComments.push(comment)
+                const otherComments = comments.filter(c => c._id !== comment._id)
+                const allComments = otherComments.concat([comment])
 
                 return { comments: allComments }
             })
@@ -152,6 +153,7 @@ class BattleRoom extends Component {
                     return {
                         phoneNumber: phoneNumber,
                         email: email,
+                        name: name,
                         userType: userType,
                         viewers: uniqueViewers
                     }
@@ -223,7 +225,7 @@ class BattleRoom extends Component {
     }
 
     render(){
-        const { viewers, comments, battleName, participants, isLoading } = this.state;
+        const { viewers, comments, battleName, participants, isLoading, name, phoneNumber, email } = this.state;
 
         return !isLoading ? (
             <div className = "BattleRoom">
@@ -244,7 +246,12 @@ class BattleRoom extends Component {
                     </Col>
                     <Col xl = {3} lg = {3} md = {3} sm = {12} xs = {12} className = "battle-room-social">
                         <ViewerCount viewers = { viewers } />
-                        <CommentsSection comments = { comments } />
+                        <CommentsSection 
+                            comments = { comments } 
+                            name = { name } 
+                            userId = { phoneNumber || email }
+                            battleId = { this.props.match.params.battleId.toUpperCase() }
+                        />
                     </Col>
                 </Row>
             </div>

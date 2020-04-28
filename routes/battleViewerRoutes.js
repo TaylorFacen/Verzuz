@@ -33,7 +33,7 @@ const handleExistingViewer = async (battleId, phoneNumber, name) => {
         // Viewer once left in the past
         const updatedBattle = await Battle.updateOne(
             { "_id": battleId, "viewers.phoneNumber": phoneNumber },
-            { "$unset": { "viewers.$.leftOn": 1}, "$set": {"viewers.$.name": name}}
+            { "$set": {"viewers.$.name": name, "viewers.$.leftOn": null}}
         );
 
         const resp = pusher.addViewer(battleId, viewer);

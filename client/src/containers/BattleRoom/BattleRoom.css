@@ -16,7 +16,8 @@
 
 .BattleRoom .ViewerCount .viewer-text {
     font-weight: light;
-    color: #333333
+    color: #333333;
+    height: 5vh;
 }
 
 .BattleRoom .battle-room-details, .BattleRoom .battle-room-social {
@@ -25,6 +26,9 @@
 
 .BattleRoom .Navigation {
     background-color: white;
+    height: 7.5vh;
+    min-height: 40px;
+    margin-bottom: 5px;
 }
 
 .VideoPlayer.module {
@@ -51,5 +55,6 @@
 }
 
 .BattleRoom .CommentsSection {
-    height: 80vh;
+    height: 85vh;
 }
+
