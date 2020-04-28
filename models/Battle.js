@@ -11,6 +11,10 @@ const battleSchema = new Schema({
     audienceLimit: Number,
     subscribers: Array,
     blacklist: Array,
+    viewers: Array,
+    comments: Array,
+    currentRound: Number,
+    currentTurn: String,
     createdOn: { type: Date, required: true, default: Date.now }
 })
 

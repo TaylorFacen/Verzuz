@@ -1,3 +1,7 @@
+.BattleNotFound {
+    max-width: 700px;
+}
+
 .BattleNotFound p {
     margin-bottom: 0px;
 }

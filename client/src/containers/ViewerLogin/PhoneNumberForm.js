@@ -19,7 +19,7 @@ export default ({ onChange, onSubmit, phoneNumber }) => (
             <Button 
                 type = "submit"
                 className = "cta"
-                disabled = { phoneNumber.length !== 10 }
+                disabled = { phoneNumber.length < 10 }
             >Submit</Button>
         </Form>
     </div>

@@ -18,11 +18,13 @@ class ViewerLogin extends Component {
         displayVerificationCodeForm: false,
         displayNameForm: false,
         isBlocked: false,
+        isFull: false,
         name: '',
         phoneNumber: '',
         verificationCode: '',
         isLoading: true,
-        battle: null
+        battle: null,
+        errorMessage: null
     }
 
     componentDidMount(){
@@ -46,6 +48,8 @@ class ViewerLogin extends Component {
                     this.setState({
                         isLoading: false
                     })
+                } else {
+                    console.log(error)
                 }
             })
         }
@@ -58,27 +62,61 @@ class ViewerLogin extends Component {
         })
     }
 
+    canEnterBattle(battle, phoneNumber){
+        return new Promise((resolve, reject) => {
+            // Check to see if battle is full
+            if ( battle.audienceLimit === battle.viewers ) {
+                // If user is in battle from another client, allow the user in
+                battleService.getViewers(battle._id)
+                .then(resp => {
+                    const { viewers } = resp;
+
+                    if ( viewers.filter(v => v.phoneNumber === phoneNumber).length === 0) {
+                        this.setState({
+                            displayPhoneNumberForm: false,
+                            displayVerificationCodeForm: false,
+                            displayNameForm: false,
+                            isFull: true
+                        })
+                        resolve(false)
+                    } else {
+                        resolve(true)
+                    }
+                })
+                .catch(error => {
+                    console.log(error);
+                    reject('error')
+                })
+            // Check to see if user is on blacklist
+            } else if ( battle.blacklist.includes(phoneNumber) ) {
+                this.setState({
+                    displayPhoneNumberForm: false,
+                    displayVerificationCodeForm: false,
+                    displayNameForm: false,
+                    isBlocked: true
+                })
+                resolve(false)
+            } else {
+                resolve(true)
+            }
+        })
+    }
+
     onSubmitPhoneNumber = e => {
         e.preventDefault();
         const { battle, phoneNumber } = this.state;
-        // Check to see if viewer is blocked
-        const blacklist = battle.blacklist;
-        if ( blacklist.includes(phoneNumber) ) {
-            this.setState({
-                displayPhoneNumberForm: false,
-                displayVerificationCodeForm: false,
-                displayNameForm: false,
-                isBlocked: true
-            })
-        } else {
-            // Todo: Send out verification via Twilio Verify
-
-            this.setState({
-                displayPhoneNumberForm: false,
-                displayVerificationCodeForm: true,
-                displayNameForm: false
-            })
-        }
+        // Check to see if user can eneter
+        this.canEnterBattle(battle, phoneNumber)
+        .then(canEnter => {
+            if ( canEnter ) {
+                // Todo: Send out verification via Twilio Verify
+                this.setState({
+                    displayPhoneNumberForm: false,
+                    displayVerificationCodeForm: true,
+                    displayNameForm: false
+                })
+            }
+        })
     }
 
     onSubmitVerificationCode = e => {
@@ -88,7 +126,8 @@ class ViewerLogin extends Component {
         this.setState({
             displayPhoneNumberForm: false,
             displayVerificationCodeForm: false,
-            displayNameForm: true
+            displayNameForm: true,
+            errorMessage: null
         })
     }
 
@@ -112,13 +151,25 @@ class ViewerLogin extends Component {
         e.preventDefault();
         const { battle, phoneNumber, name } = this.state;
 
-        // Todo: Check to see if user in chat already has display name
-        
-        // Set cookie
-        this.setCookie(battle._id, "viewer", name, phoneNumber)
-        .then(() => {
-            // Redirect to battle page
-            window.location.replace(`/battles/${battle._id}`)
+        // Check to see if user in chat already has display name
+        battleService.getViewers(battle._id)
+        .then(resp => {
+            const { viewers } = resp;
+
+            const viewerWithName = viewers.filter(viewer => viewer.name === name)
+
+            if ( viewerWithName.length > 0 && viewerWithName[0].phoneNumber !== phoneNumber ) {
+                this.setState({
+                    errorMessage: "That name is already taken."
+                })
+            } else {
+                // Set cookie
+                this.setCookie(battle._id, "viewer", name, phoneNumber)
+                .then(() => {
+                    // Redirect to battle page
+                    window.location.replace(`/battles/${battle._id}`)
+                })
+            }
         })
     }
 
@@ -137,14 +188,27 @@ class ViewerLogin extends Component {
         .catch(error => console.log(error))
     }
 
+    renderHeaderText(){
+        const { isBlocked, isFull, battle } = this.state;
+
+        if ( isBlocked ) {
+            return <h3>You were blocked from joining the { battle.name } battle</h3> 
+        } else if ( isFull ) {
+            return <h3>{ battle.name } is full.</h3> 
+        } else {
+            return <h3>You are joining the { battle.name } battle.</h3>
+        }
+    }
+
     renderLoginScreens(){
         const { 
-            displayPhoneNumberForm, displayVerificationCodeForm, displayNameForm, isBlocked,
-            phoneNumber, verificationCode, name, battle
+            displayPhoneNumberForm, displayVerificationCodeForm, displayNameForm,
+            phoneNumber, verificationCode, name, errorMessage
         } = this.state;
         return (
             <div className = "login-screens">
-                { isBlocked ? <h3>You were blocked from joining the { battle.name } battle</h3> : <h3>You are joining the { battle.name } battle.</h3> }
+                { this.renderHeaderText() }
+                { errorMessage ? <p className = "error-message">{ errorMessage }</p> : null }
                 { displayPhoneNumberForm ? (
                     <div>
                         <p>We will need to send you a one time passocde via sms.</p>
@@ -175,7 +239,6 @@ class ViewerLogin extends Component {
 
     renderSubscriptionScreens(){
         const { displayPhoneNumberForm, phoneNumber, battle } = this.state;
-
         return (
             <div className = "subscription-screen">
                 <h3>{ battle.name } hasn't started yet.</h3>
@@ -198,7 +261,7 @@ class ViewerLogin extends Component {
     }
 
     render(){
-        const {isLoading, battle} = this.state;
+        const {isLoading, battle } = this.state;
 
         return !isLoading && (
             <div className = "ViewerLogin">

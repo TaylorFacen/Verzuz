@@ -16,6 +16,7 @@ module.exports = ( app ) => {
     app.post(`/api/battles`, async (req, res) => {
         const data = {
             _id: Math.random().toString(36).substr(2, 5).toUpperCase(),
+            currentRound: 1,
             ...req.body
         }
 
@@ -29,14 +30,31 @@ module.exports = ( app ) => {
     app.get(`/api/battles/:battleId`, async (req, res) => {
         const { battleId } = req.params;
 
-        let battle = await Battle.findById(battleId);
-        if ( battle ) {
-            return res.status(200).send(battle)
+        let battle = await Battle.aggregate().match({_id: battleId}).project({
+            name: 1,
+            startedOn: 1,
+            endedOn: 1,
+            participants: 1,
+            createdOn: 1,
+            roundCount: 1,
+            audienceLimit: 1,
+            blacklist: 1,
+            viewers: {
+                $size: {
+                    "$filter": {
+                        "input": "$viewers",
+                        "as": "item",
+                        "cond": { "$eq": [ "$$item.leftOn", null ] }
+                    }
+                }
+            }
+        })
+        
+        if ( battle.length > 0 ) {
+            return res.status(200).send(battle[0])
         } else {
             return res.status(404).send("Not Found")
-        }
-
-        
+        }  
     })
 
     app.put(`/api/battles/:battleId`, async (req, res) => {

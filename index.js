@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 
 // IMPORT MODELS
 require('./models/Battle');
-require('dotenv').config();
+require('dotenv').config({ path: '.env'});
 
 const app = express();
 
@@ -23,7 +23,9 @@ app.use(bodyParser.json());
 // IMPORT ROUTES
 require('./routes/battleRoutes')(app);
 require('./routes/battleBlacklistRoutes')(app)
+require('./routes/battleCommentsRoutes')(app)
 require('./routes/battleSubscriberRoutes')(app)
+require('./routes/battleViewerRoutes')(app)
 
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static('client/build'));
