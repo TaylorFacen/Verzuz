@@ -1,9 +1,5 @@
-.BattleRoom {
+.battle {
     padding: 0px 10px;
-}
-
-.BattleRoom h1 {
-    margin-bottom: 0px;
 }
 
 .BattleRoom .ViewerCount {
@@ -25,6 +21,10 @@
 
 .BattleRoom .battle-room-details, .BattleRoom .battle-room-social {
     padding: 0px;
+}
+
+.BattleRoom .Navigation {
+    background-color: white;
 }
 
 .VideoPlayer.module {

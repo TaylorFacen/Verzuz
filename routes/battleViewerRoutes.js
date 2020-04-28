@@ -101,4 +101,26 @@ module.exports = ( app ) => {
             return res.status(400).send("phoneNumber, name, and userType required")
         }
     })
+
+    app.delete(`/api/battles/:battleId/viewers`, async (req, res) => {
+        const { battleId } = req.params;
+        const { phoneNumber, reason } = req.query;
+
+        if ( phoneNumber && reason ) {
+            const battle = await Battle.findById(battleId);
+            
+            if ( battle ) {
+                const updatedBattle = await Battle.updateOne(
+                    { "_id": battleId, "viewers.phoneNumber": phoneNumber },
+                    { "$set": {"viewers.$.leftOn": Date.now()}}
+                );
+                await pusher.bootViewer(battleId, phoneNumber, reason)
+                return res.status(201).send("OK");
+            } else {
+                return res.status(404).send("Not Found")
+            }
+        } else {
+            return res.status(400).send("phoneNumber and reason required")
+        }
+    })
 }
