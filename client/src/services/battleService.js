@@ -13,6 +13,14 @@ export default {
         let res = await axios.post(`/api/battles`, data);
         return res.data || {};
     },
+    startBattle: async battleId => {
+        let res = await axios.post(`/api/battles/${battleId}/start`);
+        return res.data || {};
+    },
+    endBattle: async battleId => {
+        let res = await axios.post(`/api/battles/${battleId}/end`);
+        return res.data || {};
+    },
     addViewer: async ( battleId, phoneNumber, userType, name ) => {
         let res = await axios.post(`/api/battles/${battleId}/viewers`, { phoneNumber, userType, name})
         return res.data || {};

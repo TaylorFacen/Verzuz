@@ -123,6 +123,11 @@ class BattleRoom extends Component {
                 return { comments: allComments }
             })
         })
+
+        // Battle Ended
+        channel.bind('end-battle', data => {
+            console.log("Battle ended")
+        })
     }
 
     async setUser(battleId, cookieData) {
@@ -227,16 +232,28 @@ class BattleRoom extends Component {
         })
     }
 
-    startBattle(){
-        this.setState({
-            startedOn: Date.now()
+    async startBattle(){
+        const battleId = this.props.match.params.battleId.toUpperCase();
+
+        battleService.startBattle(battleId)
+        .then(() => {
+            this.setState({
+                startedOn: Date.now()
+            })
         })
+        .catch(error => console.log(error))
     }
 
-    endBattle(){
-        this.setState({
-            endedOn: Date.now()
+    async endBattle(){
+        const battleId = this.props.match.params.battleId.toUpperCase();
+
+        battleService.endBattle(battleId)
+        .then(() => {
+            this.setState({
+                endedOn: Date.now()
+            })
         })
+        .catch(error => console.log(error))
     }
 
     render(){

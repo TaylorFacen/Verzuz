@@ -1,3 +1,4 @@
+const pusher = require('./pusher')
 const mongoose = require('mongoose');
 const Battle = mongoose.model('battles');
 
@@ -25,6 +26,30 @@ module.exports = ( app ) => {
             error: false,
             battle
         })
+    })
+
+    // Start Battle
+    app.post(`/api/battles/:battleId/start`, async (req, res) => {
+        const { battleId } = req.params;
+
+        Battle.findByIdAndUpdate({ _id: battleId }, {
+            startedOn: Date.now()
+        })
+        .then(() => {
+            return res.status(201).send("OK")
+        })
+        .catch(error => console.log(error))
+    })
+
+    // End Battle
+    app.post(`/api/battles/:battleId/end`, async (req, res) => {
+        const { battleId } = req.params;
+
+        const updatedBattle = await Battle.findByIdAndUpdate({ _id: battleId }, {
+            endedOn: Date.now()
+        })
+        await pusher.endBattle(battleId)
+        return res.status(201).send("OK")
     })
 
     app.get(`/api/battles/:battleId`, async (req, res) => {

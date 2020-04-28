@@ -15,8 +15,28 @@ class PlayerControls extends Component {
         }))
     }
 
+    startBattle(){
+        this.props.startBattle()
+        .then(() => {
+            this.setState({
+                displayStartBattleModal: false
+            })
+        })
+        .catch(error => console.log(error))
+    }
+
+    endBattle(){
+        this.props.endBattle()
+        .then(() => {
+            this.setState({
+                displayEndBattleModal: false
+            })
+        })
+        .catch(error => console.log(error))
+    }
+
     render(){
-        const { startedOn, endedOn, startBattle, endBattle } = this.props;
+        const { startedOn, endedOn } = this.props;
         const { displayStartBattleModal, displayEndBattleModal } = this.state;
     
         return (
@@ -25,14 +45,14 @@ class PlayerControls extends Component {
                     <StartBattle 
                         show = { displayStartBattleModal }
                         toggleModal = { () => this.toggleModal("displayStartBattleModal") }
-                        startBattle = { startBattle }
+                        startBattle = { this.startBattle.bind(this) }
                     />
                 ) : null }
                 { !!startedOn && !endedOn ? (
                     <EndBattle 
                         show = { displayEndBattleModal }
                         toggleModal = { () => this.toggleModal("displayEndBattleModal") }
-                        endBattle = { endBattle }
+                        endBattle = { this.endBattle.bind(this) }
                     />
                 ) : null }
             </div>

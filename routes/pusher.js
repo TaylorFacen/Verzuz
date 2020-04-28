@@ -24,5 +24,10 @@ module.exports = {
         pusher.trigger(battleId, 'new-comment', {
             comment: comment
         })
+    },
+    endBattle: async battleId => {
+        pusher.trigger(battleId, 'end-battle', {
+            battleId: battleId
+        })
     }
 }
