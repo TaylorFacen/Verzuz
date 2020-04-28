@@ -121,30 +121,34 @@ class BattleRoom extends Component {
         const { userType, name, email, phoneNumber } = cookieData
 
         if (userType === 'player') {
-            this.setState(prevState => {
-                // Add user just in case the new-viewer action hasn't triggered yet
-                const viewers = prevState.viewers;
-                viewers.push({
-                    phoneNumber: phoneNumber,
-                    name: name,
-                    userType: userType,
-                    joinedOn: Date.now(),
-                    leftOn: null
-                })
-                return {
+            this.setState(() => ({
                     name: name,
                     email: email,
-                    userType: userType,
-                    viewers: viewers
-                }
-            })
+                    userType: userType
+                })
+            )
         } else {
             battleService.addViewer(battleId, phoneNumber, userType, name)
             .then(() => {
-                this.setState({
-                    name: name,
-                    phoneNumber: phoneNumber,
-                    userType: userType
+                this.setState(prevState => {
+                    // Add user as a viewer
+                    const viewers = prevState.viewers;
+                    viewers.push({
+                        phoneNumber: phoneNumber,
+                        name: name,
+                        userType: userType,
+                        joinedOn: Date.now(),
+                        leftOn: null
+                    })
+                    // Make sure viewers are unique
+                    const uniqueViewers = Array.from(new Set(viewers.map(v => v.phoneNumber)))
+                    .map(phoneNumber => viewers.find(v => v.phoneNumber === phoneNumber))
+                    return {
+                        phoneNumber: phoneNumber,
+                        email: email,
+                        userType: userType,
+                        viewers: uniqueViewers
+                    }
                 })
             })
             .catch(error => console.log(error))
