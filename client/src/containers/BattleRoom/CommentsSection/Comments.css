@@ -15,7 +15,7 @@
 
 .NewViewerNotification, .Comment {
     border-top: 2px solid #F2F2F2;
-    padding: 2px;
+    padding: 5px 2px;
 }
 
 .CommentsSection.module {
@@ -29,4 +29,20 @@
 
 .Comment {
     text-align: left;
+}
+
+.CommentsSection .NewCommentForm {
+    border-top: 4px solid #F2F2F2;
+    text-align: left;
+    margin-top: 10px;
+}
+
+.CommentsSection .NewCommentForm form {
+    display: flex;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.CommentsSection .NewCommentForm textarea {
+    resize: none;
 }

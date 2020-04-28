@@ -36,8 +36,8 @@ export default {
         let res = await axios.get(`/api/battles/${battleId}/comments`);
         return res.data || {};
     },
-    postComments: async (battleId, data) => {
-        let res = await axios.post(`/api/battles/${battleId}/comments`, data);
+    postComment: async (battleId, userId, name, text) => {
+        let res = await axios.post(`/api/battles/${battleId}/comments`, {userId, name, text});
         return res.data || {};
     }
 }
