@@ -3,6 +3,7 @@ import { Row, Col } from 'react-bootstrap';
 import Pusher from 'pusher-js';
 
 import './BattleRoom.css';
+import { StartBattleButton, EndBattleButton } from './Buttons';
 import CommentsSection from './CommentsSection';
 import Navigation from './Navigation';
 import VideoPlayer from './VideoPlayer';
@@ -195,7 +196,9 @@ class BattleRoom extends Component {
                     participants: battle.participants,
                     roundCount: battle.roundCount,
                     currentRound: battle.currentRound,
-                    comments: uniqueComments
+                    comments: uniqueComments,
+                    startedOn: battle.startedOn,
+                    endedOn: battle.endedOn
                 }
             })
         })
@@ -224,8 +227,22 @@ class BattleRoom extends Component {
         })
     }
 
+    startBattle(){
+        this.setState({
+            startedOn: Date.now()
+        })
+    }
+
+    endBattle(){
+        this.setState({
+            endedOn: Date.now()
+        })
+    }
+
     render(){
-        const { viewers, comments, battleName, participants, isLoading, name, phoneNumber, email } = this.state;
+        const { battleName, startedOn, endedOn } = this.state;
+        const { viewers, comments, participants } = this.state;
+        const { isLoading, name, phoneNumber, email, userType } = this.state;
 
         return !isLoading ? (
             <div className = "BattleRoom">
@@ -243,6 +260,12 @@ class BattleRoom extends Component {
                                 </Col>
                             ))}
                         </Row>
+                        { userType === 'player' ? (
+                            <Row className = "battle-buttons">
+                                { !startedOn && !endedOn ? <StartBattleButton startBattle = { this.startBattle.bind(this) }/> : null }
+                                { !!startedOn && !endedOn ? <EndBattleButton endBattle = { this.endBattle.bind(this) } /> : null }
+                            </Row>
+                        ) : null}
                     </Col>
                     <Col xl = {3} lg = {3} md = {3} sm = {12} xs = {12} className = "battle-room-social">
                         <ViewerCount viewers = { viewers } />
