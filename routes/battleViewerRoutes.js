@@ -59,7 +59,7 @@ module.exports = ( app ) => {
 
         if ( battle ) {
             const viewers = battle.viewers;
-            if ( active.toLowerCase() === 'true' ) {
+            if ( active === 'true' ) {
                 const activeViewers = viewers.filter(v => !v.leftOn )
                 return res.status(201).send({viewers: activeViewers})
             } else {
