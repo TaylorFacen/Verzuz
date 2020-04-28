@@ -22,11 +22,12 @@ class CommentsSection extends Component {
     scrollToBottom(){
         // Make sure comments start at the bottom
         const comments = document.getElementById("comments");
-        comments.scrollTop = comments.offsetHeight;
+        comments.scrollTop = comments.scrollHeight;
     }
 
     onChange = e => {
         const { name, value } = e.target;
+
         this.setState({
             [name]: value
         })
