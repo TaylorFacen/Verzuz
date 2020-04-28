@@ -4,6 +4,7 @@ import Pusher from 'pusher-js';
 
 import './BattleRoom.css';
 import CommentsSection from './CommentsSection';
+import Navigation from './Navigation';
 import VideoPlayer from './VideoPlayer';
 import ViewerCount from './ViewerCount';
 
@@ -100,7 +101,12 @@ class BattleRoom extends Component {
                 // Remove all subscriptions
                 pusher.unsubscribe(battleId)
 
-                // Display boot reason (e.g. New session, blocked from battle, battle ended)
+                // Display boot reason (e.g. New session, blocked from battle, battle ended), left battle
+            } else {
+                // Decrease the viewer count
+                this.setState(prevState => ({
+                    viewers: prevState.viewers.filter(v => v.phoneNumber !== data.phoneNumber)
+                }))
             }
         })
 
@@ -193,6 +199,22 @@ class BattleRoom extends Component {
         })
     }
 
+    leaveBattle = reason => {
+        const { userType, phoneNumber } = this.state;
+        const battleId = this.props.match.params.battleId.toUpperCase();
+
+        if ( userType === 'player') {
+            console.log("Player leaves")
+        } else {
+            battleService.deleteViewer(battleId, phoneNumber, reason )
+            .then(() => {
+                // Remove cookie
+                document.cookie = "verzuz=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+            })
+            .catch(error => console.log(error.response) )
+        }
+    }
+
     onChange = e => {
         const { name, value } = e.target;
         this.setState({
@@ -205,7 +227,11 @@ class BattleRoom extends Component {
 
         return !isLoading ? (
             <div className = "BattleRoom">
-                <h1>{ battleName }</h1>
+                <Navigation 
+                    battleName = { battleName }
+                    battleId = { this.props.match.params.battleId.toUpperCase() }
+                    leaveBattle = { this.leaveBattle.bind(this) }
+                />
                 <Row className = "battle">
                     <Col xl = {9} lg = {9} md = {9} sm = {12} xs = {12} className = "battle-room-details">
                         <Row className = "participants">

@@ -9,7 +9,7 @@ const pusher =  new Pusher({
 });
 
 module.exports = {
-    bootViewer: (battleId, phoneNumber, reason) => {
+    bootViewer: async (battleId, phoneNumber, reason) => {
         pusher.trigger(battleId, 'boot-viewer', {
             phoneNumber: phoneNumber,
             reason: reason

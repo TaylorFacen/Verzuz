@@ -14,15 +14,22 @@ export default {
         return res.data || {};
     },
     addViewer: async ( battleId, phoneNumber, userType, name ) => {
-        let res = await axios.post(`/api/battles/${battleId}/viewers`, { phoneNumber: phoneNumber, userType: userType, name: name})
+        let res = await axios.post(`/api/battles/${battleId}/viewers`, { phoneNumber, userType, name})
         return res.data || {};
+    },
+    deleteViewer: async (battleId, phoneNumber, reason ) => {
+        if ( phoneNumber ) {
+            const encodedPhoneNUmber = phoneNumber.replace('+', '%2b')
+            let res = await axios.delete(`/api/battles/${battleId}/viewers?phoneNumber=${encodedPhoneNUmber}&reason=${reason}`)
+            return res.data || {};
+        }
     },
     getViewers: async (battleId, active = true) => {
         let res = await axios.get(`/api/battles/${battleId}/viewers?active=${active}`)
         return res.data || {};
     },
     addSubscriber: async (battleId, phoneNumber ) => {
-        let res = await axios.post(`/api/battles/${battleId}/subscribers`, {phoneNumber: phoneNumber} )
+        let res = await axios.post(`/api/battles/${battleId}/subscribers`, {phoneNumber} )
         return res.data || {};
     },
     getComments: async battleId => {

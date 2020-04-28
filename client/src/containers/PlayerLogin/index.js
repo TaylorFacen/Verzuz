@@ -63,7 +63,7 @@ class PlayerLogin extends Component {
                 battleId: battleId
             })
             const uriEncodedCookieData = encodeURI(cookieData)
-            document.cookie = `verzuz=${uriEncodedCookieData}; expires=` + expirationDate;
+            document.cookie = `verzuz=${uriEncodedCookieData}; expires=${expirationDate}; path=/;`;
         
             resolve(true)
         })
