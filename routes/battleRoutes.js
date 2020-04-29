@@ -31,14 +31,21 @@ module.exports = ( app ) => {
     // Start Battle
     app.post(`/api/battles/:battleId/start`, async (req, res) => {
         const { battleId } = req.params;
+        const { currentTurn } = req.body;
 
-        Battle.findByIdAndUpdate({ _id: battleId }, {
-            startedOn: Date.now()
-        })
-        .then(() => {
+        if ( currentTurn ) {
+            const updatedBattle = await Battle.findByIdAndUpdate({ _id: battleId }, {
+                startedOn: Date.now(),
+                currentTurn: currentTurn
+            })
+
+            await pusher.startBattle(battleId, currentTurn)
             return res.status(201).send("OK")
-        })
-        .catch(error => console.log(error))
+        } else {
+            return res.status(400).send("currentTurn required")
+        }
+
+        
     })
 
     // End Battle

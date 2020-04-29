@@ -13,8 +13,8 @@ export default {
         let res = await axios.post(`/api/battles`, data);
         return res.data || {};
     },
-    startBattle: async battleId => {
-        let res = await axios.post(`/api/battles/${battleId}/start`);
+    startBattle: async (battleId, participantEmail) => {
+        let res = await axios.post(`/api/battles/${battleId}/start`, { currentTurn: participantEmail});
         return res.data || {};
     },
     endBattle: async battleId => {

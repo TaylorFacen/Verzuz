@@ -22,7 +22,9 @@ class BattleRoom extends Component {
         comments: [],
         viewers: [],
         participants: [],
-        currentRound: 1
+        currentRound: 1,
+        currentTurn: '',
+        previousTurn: ''
     }
 
     componentDidMount(){
@@ -121,6 +123,14 @@ class BattleRoom extends Component {
                 const allComments = otherComments.concat([comment])
 
                 return { comments: allComments }
+            })
+        })
+
+        // Battle Started
+        channel.bind('start-battle', data => {
+            this.setState({
+                currentTurn: data.currentTurn,
+                currentRound: 1
             })
         })
 
@@ -234,11 +244,14 @@ class BattleRoom extends Component {
 
     async startBattle(){
         const battleId = this.props.match.params.battleId.toUpperCase();
+        const { participants } = this.state;
 
-        battleService.startBattle(battleId)
+        const currentTurnParticipant = participants[0];
+
+        battleService.startBattle(battleId, currentTurnParticipant.email)
         .then(() => {
             this.setState({
-                startedOn: Date.now()
+                startedOn: Date.now(),
             })
         })
         .catch(error => console.log(error))

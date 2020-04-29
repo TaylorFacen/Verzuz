@@ -15,6 +15,7 @@ const battleSchema = new Schema({
     comments: Array,
     currentRound: Number,
     currentTurn: String,
+    previousTurn: String,
     createdOn: { type: Date, required: true, default: Date.now }
 })
 
