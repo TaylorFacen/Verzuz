@@ -15,7 +15,7 @@ module.exports = {
             reason: reason
         });
     },
-    addViewer: (battleId, viewer) => {
+    addViewer: async (battleId, viewer) => {
         pusher.trigger(battleId, 'new-viewer', {
             viewer: viewer
         })

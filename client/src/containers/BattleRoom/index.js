@@ -160,7 +160,9 @@ class BattleRoom extends Component {
             )
         } else {
             battleService.addViewer(battleId, phoneNumber, userType, name)
-            .then(() => {
+            .then(resp => {
+                const { viewer } = resp;
+
                 this.setState(prevState => {
                     // Add user as a viewer
                     const viewers = prevState.viewers;
@@ -179,7 +181,8 @@ class BattleRoom extends Component {
                         email: email,
                         name: name,
                         userType: userType,
-                        viewers: uniqueViewers
+                        viewers: uniqueViewers,
+                        userVotes: viewer.votes
                     }
                 })
             })
