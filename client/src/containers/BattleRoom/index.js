@@ -4,6 +4,7 @@ import Pusher from 'pusher-js';
 
 import './BattleRoom.css';
 import CommentsSection from './CommentsSection';
+import CurrentRound from './CurrentRound';
 import Navigation from './Navigation';
 import PlayerControls from './PlayerControls';
 import VideoPlayer from './VideoPlayer';
@@ -24,7 +25,8 @@ class BattleRoom extends Component {
         participants: [],
         currentRound: 1,
         currentTurn: '',
-        previousTurn: ''
+        previousTurn: '',
+        roundCount: null
     }
 
     componentDidMount(){
@@ -284,7 +286,7 @@ class BattleRoom extends Component {
 
     render(){
         const { battleName, startedOn, endedOn } = this.state;
-        const { viewers, comments, participants, currentTurn } = this.state;
+        const { viewers, comments, participants, currentTurn, currentRound, roundCount } = this.state;
         const { isLoading, name, phoneNumber, email, userType } = this.state;
 
         return !isLoading ? (
@@ -296,10 +298,16 @@ class BattleRoom extends Component {
                 />
                 <Row className = "battle">
                     <Col xl = {9} lg = {9} md = {9} sm = {12} xs = {12} className = "battle-room-details">
+                        <Row className = "round">
+                            <CurrentRound 
+                                currentRound = { currentRound }
+                                roundCount = { roundCount }
+                            />
+                        </Row>
                         <Row className = "participants">
                             { participants.map(p => {
                                 const isActive = currentTurn === p.email;
-                                const displayFinishTurnButton = isActive && email === p.email;
+                                const displayFinishTurnButton = isActive && email === p.email && currentRound <= roundCount;
 
                                 return (
                                     <Col key = { p.email } >
