@@ -211,6 +211,8 @@ class BattleRoom extends Component {
                     participants: battle.participants,
                     roundCount: battle.roundCount,
                     currentRound: battle.currentRound,
+                    currentTurn: battle.currentTurn,
+                    previousTurn: battle.previousTurn,
                     comments: uniqueComments,
                     startedOn: battle.startedOn,
                     endedOn: battle.endedOn
@@ -271,7 +273,7 @@ class BattleRoom extends Component {
 
     render(){
         const { battleName, startedOn, endedOn } = this.state;
-        const { viewers, comments, participants } = this.state;
+        const { viewers, comments, participants, currentTurn } = this.state;
         const { isLoading, name, phoneNumber, email, userType } = this.state;
 
         return !isLoading ? (
@@ -284,11 +286,17 @@ class BattleRoom extends Component {
                 <Row className = "battle">
                     <Col xl = {9} lg = {9} md = {9} sm = {12} xs = {12} className = "battle-room-details">
                         <Row className = "participants">
-                            { participants.map(p => (
-                                <Col key = { p.email } >
-                                    <VideoPlayer playerName = { p.name } />
-                                </Col>
-                            ))}
+                            { participants.map(p => {
+                                const isActive = currentTurn === p.email;
+                                return (
+                                    <Col key = { p.email } >
+                                        <VideoPlayer 
+                                            playerName = { p.name } 
+                                            isActive = { isActive }
+                                        />
+                                    </Col>
+                                )
+                            })}
                         </Row>
                         { userType === 'player' ? (
                             <PlayerControls 

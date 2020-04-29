@@ -49,6 +49,10 @@
     height: 35vh;
 }
 
+.VideoPlayer.active-player {
+    border: 5px solid #333333;
+}
+
 .participants {
     justify-content: stretch;
     padding: 0px 10px;

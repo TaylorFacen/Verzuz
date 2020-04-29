@@ -69,6 +69,9 @@ module.exports = ( app ) => {
             participants: 1,
             createdOn: 1,
             roundCount: 1,
+            currentRound: 1,
+            currentTurn: 1,
+            previousTurn: 1,
             audienceLimit: 1,
             blacklist: 1,
             viewers: {
