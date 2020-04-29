@@ -48,6 +48,44 @@ module.exports = ( app ) => {
         
     })
 
+    // Next Turn
+    app.post(`/api/battles/:battleId/next`, async (req, res) => {
+        const { battleId } = req.params;
+
+        const battle = await Battle.findById(battleId);
+
+        if ( battle ) {
+            const participants = battle.participants;
+            const currentRound = battle.currentRound;
+            const currentTurn = battle.currentTurn;
+            const previousTurn = battle.previousTurn;
+
+            if ( !previousTurn || currentTurn === previousTurn ) {
+                const data = {
+                    currentRound: currentRound,
+                    currentTurn: participants.filter(p => p.email !== currentTurn)[0].email,
+                    previousTurn: currentTurn
+                }
+
+                const updatedBattle = await Battle.findByIdAndUpdate({ _id: battleId }, data)
+                await pusher.nextTurn(battleId, data);
+                return res.status(201).send("OK")
+            } else {
+                const data = {
+                    currentRound: currentRound + 1,
+                    currentTurn: currentTurn,
+                    previousTurn: currentTurn
+                }
+                
+                const updatedBattle = await Battle.findByIdAndUpdate({ _id: battleId }, data);
+                await pusher.nextTurn(battleId, data);
+                return res.status(201).send("OK")
+            }
+        } else {
+            return res.status(404).send("Not Found")
+        }
+    })
+
     // End Battle
     app.post(`/api/battles/:battleId/end`, async (req, res) => {
         const { battleId } = req.params;

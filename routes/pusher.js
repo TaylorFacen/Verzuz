@@ -34,5 +34,8 @@ module.exports = {
         pusher.trigger(battleId, 'start-battle', {
             currentTurn: currentTurn
         })
+    },
+    nextTurn: async (battleId, data) => {
+        pusher.trigger(battleId, 'next-turn', data)
     }
 }

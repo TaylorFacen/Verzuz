@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Row, Col } from 'react-bootstrap';
+import { Row, Col, Button } from 'react-bootstrap';
 import Pusher from 'pusher-js';
 
 import './BattleRoom.css';
@@ -138,6 +138,12 @@ class BattleRoom extends Component {
         channel.bind('end-battle', data => {
             console.log("Battle ended")
         })
+
+        // Next Turn
+        channel.bind('next-turn', data => {
+            console.log(data)
+            this.setState(data)
+        })
     }
 
     async setUser(battleId, cookieData) {
@@ -271,6 +277,11 @@ class BattleRoom extends Component {
         .catch(error => console.log(error))
     }
 
+    finishTurn(){
+        const battleId = this.props.match.params.battleId.toUpperCase()
+        battleService.nextTurn(battleId)
+    }
+
     render(){
         const { battleName, startedOn, endedOn } = this.state;
         const { viewers, comments, participants, currentTurn } = this.state;
@@ -288,12 +299,19 @@ class BattleRoom extends Component {
                         <Row className = "participants">
                             { participants.map(p => {
                                 const isActive = currentTurn === p.email;
+                                const displayFinishTurnButton = isActive && email === p.email;
+
                                 return (
                                     <Col key = { p.email } >
                                         <VideoPlayer 
                                             playerName = { p.name } 
                                             isActive = { isActive }
                                         />
+                                        { displayFinishTurnButton ? (
+                                            <Button className = "cta" onClick = { this.finishTurn.bind(this) }>
+                                                Finish Turn
+                                            </Button>
+                                        ) : null }
                                     </Col>
                                 )
                             })}

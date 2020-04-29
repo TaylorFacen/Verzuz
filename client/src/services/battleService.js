@@ -21,6 +21,10 @@ export default {
         let res = await axios.post(`/api/battles/${battleId}/end`);
         return res.data || {};
     },
+    nextTurn: async battleId => {
+        let res = await axios.post(`/api/battles/${battleId}/next`);
+        return res.data || {};
+    },
     addViewer: async ( battleId, phoneNumber, userType, name ) => {
         let res = await axios.post(`/api/battles/${battleId}/viewers`, { phoneNumber, userType, name})
         return res.data || {};
