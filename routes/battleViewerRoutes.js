@@ -36,16 +36,16 @@ const handleExistingViewer = async (battleId, phoneNumber, name) => {
             { "$set": {"viewers.$.name": name, "viewers.$.leftOn": null}}
         );
 
-        const resp = pusher.addViewer(battleId, viewer);
-        return {updatedBattle, resp}
+        const resp = await pusher.addViewer(battleId, viewer);
+        return {viewer}
     } else {
         const updatedBattle = await Battle.updateOne(
             { "_id": battleId, "viewers.phoneNumber": phoneNumber },
             { "$set": {"viewers.$.name": name}}
         );
 
-        const resp = pusher.bootViewer(battleId, phoneNumber, 'new session');
-        return { resp }
+        const resp = await pusher.bootViewer(battleId, phoneNumber, 'new session');
+        return viewer
     }
 }
 
@@ -58,7 +58,14 @@ module.exports = ( app ) => {
         const battle = await Battle.findById(battleId);
 
         if ( battle ) {
-            const viewers = battle.viewers;
+            // Don't include each viewers votes to save on memory
+            const viewers = battle.viewers.map(v => ({
+                phoneNumber: v.phoneNumber,
+                name: v.name,
+                userType: v.userType,
+                joinedOn: v.joinedOn,
+                leftOn: v.leftOn
+            }));
             if ( active === 'true' ) {
                 const activeViewers = viewers.filter(v => !v.leftOn )
                 return res.status(201).send({viewers: activeViewers})
@@ -81,18 +88,19 @@ module.exports = ( app ) => {
                 const viewerInBattle = await isViewerInBattle(battleId, phoneNumber);
 
                 if ( viewerInBattle ) {
-                    handleExistingViewer(battleId, phoneNumber, name);
-                    return res.status(201).send("OK")
+                    const viewer = await handleExistingViewer(battleId, phoneNumber, name);
+                    return res.status(201).send(viewer)
                 } else {
                     const viewer = {
                         phoneNumber,
                         name,
                         userType,
                         joinedOn: Date.now(),
-                        leftOn: null
+                        leftOn: null,
+                        votes: Array(battle.roundCount).fill().map((_, idx) => idx + 1).map(num => ({round: num, player: null}))
                     }
                     addViewer(battleId, viewer)
-                    return res.status(201).send("OK")
+                    return res.status(201).send(viewer)
                 }
             } else {
                 return res.status(404).send("Not Found")

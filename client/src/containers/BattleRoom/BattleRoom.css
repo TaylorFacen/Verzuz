@@ -2,6 +2,16 @@
     padding: 0px 10px;
 }
 
+.battle .round {
+    text-align: center;
+    display: block;
+}
+
+.battle .round-count {
+    font-size: 14px;
+    font-weight: light;
+}
+
 .BattleRoom .ViewerCount {
     padding: 5px;
     width: 75px;
@@ -49,12 +59,17 @@
     height: 35vh;
 }
 
+.VideoPlayer.active-player {
+    box-shadow: 8px 8px 8px #815587;
+}
+
 .participants {
     justify-content: stretch;
     padding: 0px 10px;
 }
 
-.BattleRoom .CommentsSection {
-    height: 85vh;
+.PlayerScore .score {
+    font-weight: bold;
+    font-size: 18px;
 }
 

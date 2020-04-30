@@ -15,7 +15,7 @@ module.exports = {
             reason: reason
         });
     },
-    addViewer: (battleId, viewer) => {
+    addViewer: async (battleId, viewer) => {
         pusher.trigger(battleId, 'new-viewer', {
             viewer: viewer
         })
@@ -29,5 +29,13 @@ module.exports = {
         pusher.trigger(battleId, 'end-battle', {
             battleId: battleId
         })
+    },
+    startBattle: async (battleId, currentTurn) => {
+        pusher.trigger(battleId, 'start-battle', {
+            currentTurn: currentTurn
+        })
+    },
+    nextTurn: async (battleId, data) => {
+        pusher.trigger(battleId, 'next-turn', data)
     }
 }

@@ -1,13 +1,16 @@
 import React, { Component } from "react";
-import { Row, Col } from 'react-bootstrap';
+import { Row, Col, Button } from 'react-bootstrap';
 import Pusher from 'pusher-js';
 
 import './BattleRoom.css';
 import CommentsSection from './CommentsSection';
+import CurrentRound from './CurrentRound';
 import Navigation from './Navigation';
 import PlayerControls from './PlayerControls';
+import PlayerScore from './PlayerScore';
 import VideoPlayer from './VideoPlayer';
 import ViewerCount from './ViewerCount';
+import VoteButton from './VoteButton';
 
 import battleService from '../../services/battleService';
 import parseCookie from '../../services/parseCookie';
@@ -22,7 +25,10 @@ class BattleRoom extends Component {
         comments: [],
         viewers: [],
         participants: [],
-        currentRound: 1
+        currentRound: 1,
+        currentTurn: '',
+        previousTurn: '',
+        roundCount: null
     }
 
     componentDidMount(){
@@ -35,19 +41,12 @@ class BattleRoom extends Component {
 
             // Set the user
             this.setUser(battleId, cookieData)
-            .then(() => {
+            .then(async () => {
                 // Start subscriptions
-                const subscriptionPromise = this.startSubscriptions(battleId, cookieData.phoneNumber || cookieData.email)
+                await this.startSubscriptions(battleId, cookieData.phoneNumber || cookieData.email)
 
                 // Get data
-                const dataPromise = this.getData(battleId)
-
-                Promise.all([subscriptionPromise, dataPromise])
-                .then(() => {
-                    this.setState({
-                        isLoading: false
-                    })
-                })
+                await this.getData(battleId)
             })
         } else {
             window.location.replace(`/battles/${battleId}/join`)
@@ -124,9 +123,37 @@ class BattleRoom extends Component {
             })
         })
 
+        // Battle Started
+        channel.bind('start-battle', data => {
+            this.setState({
+                currentTurn: data.currentTurn,
+                currentRound: 1,
+                startedOn: Date.now()
+            })
+        })
+
         // Battle Ended
         channel.bind('end-battle', data => {
             console.log("Battle ended")
+        })
+
+        // Next Turn
+        channel.bind('next-turn', data => {
+            const { currentRound, currentTurn, previousTurn, scores } = data;
+            const winnerByRound = Array.from(new Set(scores.map(score => score.round))).map(round => {
+                const roundScores = scores.filter(score => score.round === round && !!score.player);
+                const roundWinner = roundScores.reduce((winner, player) => player.votes > winner.votes ? player : winner, roundScores[0]);
+                return {
+                    round: round,
+                    winner: roundWinner.player                    
+                }
+            });
+            this.setState({
+                currentRound,
+                currentTurn,
+                previousTurn,
+                scores: winnerByRound
+            })
         })
     }
 
@@ -142,7 +169,7 @@ class BattleRoom extends Component {
             )
         } else {
             battleService.addViewer(battleId, phoneNumber, userType, name)
-            .then(() => {
+            .then(viewer => {
                 this.setState(prevState => {
                     // Add user as a viewer
                     const viewers = prevState.viewers;
@@ -161,7 +188,8 @@ class BattleRoom extends Component {
                         email: email,
                         name: name,
                         userType: userType,
-                        viewers: uniqueViewers
+                        viewers: uniqueViewers,
+                        userVotes: viewer.votes
                     }
                 })
             })
@@ -195,15 +223,31 @@ class BattleRoom extends Component {
                 const uniqueComments = Array.from(new Set(allComments.map(c => c._id)))
                 .map(id => allComments.find(c => c._id === id))
 
+                // Calculate winner for each round
+                const scores = battle.scores;
+
+                const winnerByRound = Array.from(new Set(battle.scores.map(score => score.round))).map(round => {
+                    const roundScores = scores.filter(score => score.round === round && !!score.player);
+                    const roundWinner = roundScores.reduce((winner, player) => player.votes > winner.votes ? player : winner, roundScores[0]);
+                    return {
+                        round: round,
+                        winner: roundWinner?.player                    
+                    }
+                });
+
                 return {
                     viewers: uniqueViewers,
                     battleName: battle.name,
                     participants: battle.participants,
                     roundCount: battle.roundCount,
                     currentRound: battle.currentRound,
+                    currentTurn: battle.currentTurn,
+                    previousTurn: battle.previousTurn,
                     comments: uniqueComments,
                     startedOn: battle.startedOn,
-                    endedOn: battle.endedOn
+                    endedOn: battle.endedOn,
+                    scores: winnerByRound,
+                    isLoading: false
                 }
             })
         })
@@ -234,11 +278,14 @@ class BattleRoom extends Component {
 
     async startBattle(){
         const battleId = this.props.match.params.battleId.toUpperCase();
+        const { participants } = this.state;
 
-        battleService.startBattle(battleId)
+        const currentTurnParticipant = participants[0];
+
+        battleService.startBattle(battleId, currentTurnParticipant.email)
         .then(() => {
             this.setState({
-                startedOn: Date.now()
+                startedOn: Date.now(),
             })
         })
         .catch(error => console.log(error))
@@ -256,10 +303,28 @@ class BattleRoom extends Component {
         .catch(error => console.log(error))
     }
 
+    finishTurn(){
+        const battleId = this.props.match.params.battleId.toUpperCase()
+        battleService.nextTurn(battleId)
+    }
+
+    castVote = player => {
+        const battleId = this.props.match.params.battleId.toUpperCase();
+        const { userVotes, currentRound, phoneNumber } = this.state;
+
+        battleService.castVote(battleId, phoneNumber, currentRound, player )
+        .then(() => {
+            userVotes.find(vote => vote.round === currentRound).player = player;
+            this.setState({
+                userVotes
+            })
+        })
+    }
+
     render(){
-        const { battleName, startedOn, endedOn } = this.state;
-        const { viewers, comments, participants } = this.state;
-        const { isLoading, name, phoneNumber, email, userType } = this.state;
+        const { battleName, startedOn, endedOn, currentTurn, currentRound, roundCount } = this.state;
+        const { viewers, comments, participants, scores } = this.state;
+        const { isLoading, name, phoneNumber, email, userType, userVotes } = this.state;
 
         return !isLoading ? (
             <div className = "BattleRoom">
@@ -270,12 +335,44 @@ class BattleRoom extends Component {
                 />
                 <Row className = "battle">
                     <Col xl = {9} lg = {9} md = {9} sm = {12} xs = {12} className = "battle-room-details">
+                        <Row className = "round">
+                            <CurrentRound 
+                                currentRound = { currentRound }
+                                roundCount = { roundCount }
+                                scores = { scores }
+                                participants = { participants }
+                            />
+                        </Row>
                         <Row className = "participants">
-                            { participants.map(p => (
-                                <Col key = { p.email } >
-                                    <VideoPlayer playerName = { p.name } />
-                                </Col>
-                            ))}
+                            { participants.map(p => {
+                                const isActive = currentTurn === p.email;
+                                const isCurrentVote = !!userVotes && userVotes.find(v => v.round === (currentRound > roundCount ? currentRound - 1 : currentRound)).player === p.email;
+                                const displayFinishTurnButton = isActive && email === p.email && currentRound <= roundCount;
+                                const score = scores.filter(score => score.winner === p.email).length;
+
+                                return (
+                                    <Col key = { p.email } >
+                                        <VideoPlayer 
+                                            playerName = { p.name } 
+                                            isActive = { isActive }
+                                        />
+                                        <PlayerScore score = { score } />
+
+                                        { displayFinishTurnButton ? (
+                                            <Button className = "cta" onClick = { this.finishTurn.bind(this) }>
+                                                Finish Turn
+                                            </Button>
+                                        ) : null }
+
+                                        { userType !== "player" ? (
+                                            <VoteButton 
+                                                isCurrentVote = { isCurrentVote }
+                                                castVote = {() => this.castVote(p.email) }
+                                            />
+                                        ) : null }
+                                    </Col>
+                                )
+                            })}
                         </Row>
                         { userType === 'player' ? (
                             <PlayerControls 

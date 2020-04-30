@@ -13,12 +13,16 @@ export default {
         let res = await axios.post(`/api/battles`, data);
         return res.data || {};
     },
-    startBattle: async battleId => {
-        let res = await axios.post(`/api/battles/${battleId}/start`);
+    startBattle: async (battleId, participantEmail) => {
+        let res = await axios.post(`/api/battles/${battleId}/start`, { currentTurn: participantEmail});
         return res.data || {};
     },
     endBattle: async battleId => {
         let res = await axios.post(`/api/battles/${battleId}/end`);
+        return res.data || {};
+    },
+    nextTurn: async battleId => {
+        let res = await axios.post(`/api/battles/${battleId}/next`);
         return res.data || {};
     },
     addViewer: async ( battleId, phoneNumber, userType, name ) => {
@@ -46,6 +50,10 @@ export default {
     },
     postComment: async (battleId, userId, name, text) => {
         let res = await axios.post(`/api/battles/${battleId}/comments`, {userId, name, text});
+        return res.data || {};
+    },
+    castVote: async (battleId, phoneNumber, currentRound, player) => {
+        let res = await axios.post(`/api/battles/${battleId}/votes`, { phoneNumber, currentRound, player });
         return res.data || {};
     }
 }

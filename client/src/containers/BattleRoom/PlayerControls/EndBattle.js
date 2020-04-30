@@ -3,7 +3,7 @@ import { Button, Modal } from 'react-bootstrap';
 
 export default ({ endBattle, toggleModal, show }) => (
     <div className = "EndBattle">
-        <Button onClick = { toggleModal } className = "cta">End Battle</Button>
+        <Button variant = "danger" onClick = { toggleModal } size = "sm">End Battle</Button>
         <Modal show = { show } onHide={ toggleModal }>
             <Modal.Header closeButton>
                 <Modal.Title>End Battle</Modal.Title>
