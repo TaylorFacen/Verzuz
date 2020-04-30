@@ -7,8 +7,8 @@ export default ({ currentRound, roundCount, scores, participants }) => {
             player: player,
             score: scores.filter(score => score.winner === player).length
         }))
-        
-        if (playerFinalScores[0].score === playerFinalScores[1].score) {
+
+        if (playerFinalScores[0]?.score === playerFinalScores[1]?.score) {
             return <h2>It's a Tie!</h2>
         } else {
             const winner = playerFinalScores.reduce((winner, curr) => {
@@ -19,7 +19,9 @@ export default ({ currentRound, roundCount, scores, participants }) => {
                 }
             }, playerFinalScores[0]);
 
-            return <h2>{ participants.find(p => p.email === winner.player).name } is the winner!</h2>
+            const playerName = participants.find(p => p.email === winner.player)?.name;
+
+            return playerName ? <h2>{ playerName } is the winner!</h2> : null
         }
     } else {
         return <h2>Round { currentRound }<span className = "round-count"> / {roundCount }</span></h2>

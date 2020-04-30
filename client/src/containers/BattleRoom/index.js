@@ -169,9 +169,7 @@ class BattleRoom extends Component {
             )
         } else {
             battleService.addViewer(battleId, phoneNumber, userType, name)
-            .then(resp => {
-                const { viewer } = resp;
-
+            .then(viewer => {
                 this.setState(prevState => {
                     // Add user as a viewer
                     const viewers = prevState.viewers;
@@ -233,7 +231,7 @@ class BattleRoom extends Component {
                     const roundWinner = roundScores.reduce((winner, player) => player.votes > winner.votes ? player : winner, roundScores[0]);
                     return {
                         round: round,
-                        winner: roundWinner.player                    
+                        winner: roundWinner?.player                    
                     }
                 });
 

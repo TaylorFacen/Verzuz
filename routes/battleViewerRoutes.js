@@ -45,7 +45,7 @@ const handleExistingViewer = async (battleId, phoneNumber, name) => {
         );
 
         const resp = await pusher.bootViewer(battleId, phoneNumber, 'new session');
-        return { viewer }
+        return viewer
     }
 }
 
