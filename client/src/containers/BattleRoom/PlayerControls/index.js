@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 
+import './PlayerControls.css';
 import EndBattle from './EndBattle';
 import StartBattle from './StartBattle';
 

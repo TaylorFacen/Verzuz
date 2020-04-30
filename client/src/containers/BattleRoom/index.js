@@ -7,6 +7,7 @@ import CommentsSection from './CommentsSection';
 import CurrentRound from './CurrentRound';
 import Navigation from './Navigation';
 import PlayerControls from './PlayerControls';
+import PlayerScore from './PlayerScore';
 import VideoPlayer from './VideoPlayer';
 import ViewerCount from './ViewerCount';
 
@@ -39,19 +40,12 @@ class BattleRoom extends Component {
 
             // Set the user
             this.setUser(battleId, cookieData)
-            .then(() => {
+            .then(async () => {
                 // Start subscriptions
-                const subscriptionPromise = this.startSubscriptions(battleId, cookieData.phoneNumber || cookieData.email)
+                await this.startSubscriptions(battleId, cookieData.phoneNumber || cookieData.email)
 
                 // Get data
-                const dataPromise = this.getData(battleId)
-
-                Promise.all([subscriptionPromise, dataPromise])
-                .then(() => {
-                    this.setState({
-                        isLoading: false
-                    })
-                })
+                await this.getData(battleId)
             })
         } else {
             window.location.replace(`/battles/${battleId}/join`)
@@ -143,7 +137,6 @@ class BattleRoom extends Component {
 
         // Next Turn
         channel.bind('next-turn', data => {
-            console.log(data)
             this.setState(data)
         })
     }
@@ -216,6 +209,17 @@ class BattleRoom extends Component {
                 const uniqueComments = Array.from(new Set(allComments.map(c => c._id)))
                 .map(id => allComments.find(c => c._id === id))
 
+                // Calculate winner for each round
+                const scores = battle.scores;
+                const winnerByRound = Array.from(new Set(battle.scores.map(score => score.round))).map(round => {
+                    const roundScores = scores.filter(score => score.round === round);
+                    const roundWinner = roundScores.reduce((winner, player) => player.votes > winner.votes ? player : winner, roundScores[0]);
+                    return {
+                        round: round,
+                        winner: roundWinner.player                    
+                    }
+                });
+
                 return {
                     viewers: uniqueViewers,
                     battleName: battle.name,
@@ -226,7 +230,9 @@ class BattleRoom extends Component {
                     previousTurn: battle.previousTurn,
                     comments: uniqueComments,
                     startedOn: battle.startedOn,
-                    endedOn: battle.endedOn
+                    endedOn: battle.endedOn,
+                    scores: winnerByRound,
+                    isLoading: false
                 }
             })
         })
@@ -288,8 +294,8 @@ class BattleRoom extends Component {
     }
 
     render(){
-        const { battleName, startedOn, endedOn } = this.state;
-        const { viewers, comments, participants, currentTurn, currentRound, roundCount } = this.state;
+        const { battleName, startedOn, endedOn, currentTurn, currentRound, roundCount } = this.state;
+        const { viewers, comments, participants, scores } = this.state;
         const { isLoading, name, phoneNumber, email, userType } = this.state;
 
         return !isLoading ? (
@@ -305,19 +311,23 @@ class BattleRoom extends Component {
                             <CurrentRound 
                                 currentRound = { currentRound }
                                 roundCount = { roundCount }
+                                scores = { scores }
+                                participants = { participants }
                             />
                         </Row>
                         <Row className = "participants">
                             { participants.map(p => {
                                 const isActive = currentTurn === p.email;
                                 const displayFinishTurnButton = isActive && email === p.email && currentRound <= roundCount;
-
+                                const score = scores.filter(score => score.winner === p.email).length;
                                 return (
                                     <Col key = { p.email } >
                                         <VideoPlayer 
                                             playerName = { p.name } 
                                             isActive = { isActive }
                                         />
+                                        <PlayerScore score = { score } />
+
                                         { displayFinishTurnButton ? (
                                             <Button className = "cta" onClick = { this.finishTurn.bind(this) }>
                                                 Finish Turn

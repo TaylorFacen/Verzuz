@@ -60,7 +60,7 @@
 }
 
 .VideoPlayer.active-player {
-    border: 5px solid #333333;
+    box-shadow: 8px 8px 8px #815587;
 }
 
 .participants {
@@ -68,7 +68,8 @@
     padding: 0px 10px;
 }
 
-.BattleRoom .CommentsSection {
-    height: 85vh;
+.PlayerScore .score {
+    font-weight: bold;
+    font-size: 18px;
 }
 
