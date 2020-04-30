@@ -10,6 +10,7 @@ import PlayerControls from './PlayerControls';
 import PlayerScore from './PlayerScore';
 import VideoPlayer from './VideoPlayer';
 import ViewerCount from './ViewerCount';
+import VoteButton from './VoteButton';
 
 import battleService from '../../services/battleService';
 import parseCookie from '../../services/parseCookie';
@@ -139,7 +140,7 @@ class BattleRoom extends Component {
         channel.bind('next-turn', data => {
             const { currentRound, currentTurn, previousTurn, scores } = data;
             const winnerByRound = Array.from(new Set(scores.map(score => score.round))).map(round => {
-                const roundScores = scores.filter(score => score.round === round);
+                const roundScores = scores.filter(score => score.round === round && !!score.player);
                 const roundWinner = roundScores.reduce((winner, player) => player.votes > winner.votes ? player : winner, roundScores[0]);
                 return {
                     round: round,
@@ -225,8 +226,9 @@ class BattleRoom extends Component {
 
                 // Calculate winner for each round
                 const scores = battle.scores;
+
                 const winnerByRound = Array.from(new Set(battle.scores.map(score => score.round))).map(round => {
-                    const roundScores = scores.filter(score => score.round === round);
+                    const roundScores = scores.filter(score => score.round === round && !!score.player);
                     const roundWinner = roundScores.reduce((winner, player) => player.votes > winner.votes ? player : winner, roundScores[0]);
                     return {
                         round: round,
@@ -307,12 +309,23 @@ class BattleRoom extends Component {
         battleService.nextTurn(battleId)
     }
 
+    castVote = player => {
+        const battleId = this.props.match.params.battleId.toUpperCase();
+        const { userVotes, currentRound, phoneNumber } = this.state;
+
+        battleService.castVote(battleId, phoneNumber, currentRound, player )
+        .then(() => {
+            userVotes.find(vote => vote.round === currentRound).player = player;
+            this.setState({
+                userVotes
+            })
+        })
+    }
+
     render(){
         const { battleName, startedOn, endedOn, currentTurn, currentRound, roundCount } = this.state;
         const { viewers, comments, participants, scores } = this.state;
-        const { isLoading, name, phoneNumber, email, userType } = this.state;
-
-        console.log(scores)
+        const { isLoading, name, phoneNumber, email, userType, userVotes } = this.state;
 
         return !isLoading ? (
             <div className = "BattleRoom">
@@ -334,8 +347,10 @@ class BattleRoom extends Component {
                         <Row className = "participants">
                             { participants.map(p => {
                                 const isActive = currentTurn === p.email;
+                                const isCurrentVote = !!userVotes && userVotes.find(v => v.round === (currentRound > roundCount ? currentRound - 1 : currentRound)).player === p.email;
                                 const displayFinishTurnButton = isActive && email === p.email && currentRound <= roundCount;
                                 const score = scores.filter(score => score.winner === p.email).length;
+
                                 return (
                                     <Col key = { p.email } >
                                         <VideoPlayer 
@@ -348,6 +363,13 @@ class BattleRoom extends Component {
                                             <Button className = "cta" onClick = { this.finishTurn.bind(this) }>
                                                 Finish Turn
                                             </Button>
+                                        ) : null }
+
+                                        { userType !== "player" ? (
+                                            <VoteButton 
+                                                isCurrentVote = { isCurrentVote }
+                                                castVote = {() => this.castVote(p.email) }
+                                            />
                                         ) : null }
                                     </Col>
                                 )

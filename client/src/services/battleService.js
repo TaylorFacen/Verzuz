@@ -51,5 +51,9 @@ export default {
     postComment: async (battleId, userId, name, text) => {
         let res = await axios.post(`/api/battles/${battleId}/comments`, {userId, name, text});
         return res.data || {};
+    },
+    castVote: async (battleId, phoneNumber, currentRound, player) => {
+        let res = await axios.post(`/api/battles/${battleId}/votes`, { phoneNumber, currentRound, player });
+        return res.data || {};
     }
 }

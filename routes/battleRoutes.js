@@ -176,33 +176,18 @@ module.exports = ( app ) => {
         }  
     })
 
-    // Get aggregate battle scores
-    app.get(`/api/battles/:battleId`, async (req, res) => {
+    // Post vote
+    app.post(`/api/battles/:battleId/votes`, async (req, res) => {
         const { battleId } = req.params;
+        const { phoneNumber, currentRound, player } = req.body;
 
-        const scores = Battle.aggregate([
-            {$match: {_id: battleId}},
-            {$project: {
-                _id: 0,
-                votes: {
-                    $reduce: {
-                        input: "$viewers.votes",
-                        initialValue: [],
-                        in: { $concatArrays : ["$$value", "$$this"] }
-                    }
-                }
-            }},
-            {$unwind: "$votes"},
-            {$group: {
-                _id: {
-                    round: "$votes.round",
-                    player: "$votes.player"
-                },
-                count: {$sum: 1}
-            }}
-        ])
-
-        return res.status(201).send({scores: scores})
+        const battle = await Battle.findOne({"_id": battleId}, (err, battle) => {
+            const viewer = battle.viewers.find(v => v.phoneNumber === phoneNumber);
+            const roundVote = viewer.votes.find(v => v.round === currentRound);
+            roundVote.player = player
+            battle.save();
+            return res.status(201).send("OK")
+        })
     })
 
     app.put(`/api/battles/:battleId`, async (req, res) => {
