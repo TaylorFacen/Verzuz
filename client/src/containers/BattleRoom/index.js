@@ -312,6 +312,8 @@ class BattleRoom extends Component {
         const { viewers, comments, participants, scores } = this.state;
         const { isLoading, name, phoneNumber, email, userType } = this.state;
 
+        console.log(scores)
+
         return !isLoading ? (
             <div className = "BattleRoom">
                 <Navigation 
