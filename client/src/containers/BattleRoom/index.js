@@ -127,7 +127,8 @@ class BattleRoom extends Component {
         channel.bind('start-battle', data => {
             this.setState({
                 currentTurn: data.currentTurn,
-                currentRound: 1
+                currentRound: 1,
+                startedOn: Date.now()
             })
         })
 
