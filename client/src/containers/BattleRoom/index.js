@@ -137,7 +137,21 @@ class BattleRoom extends Component {
 
         // Next Turn
         channel.bind('next-turn', data => {
-            this.setState(data)
+            const { currentRound, currentTurn, previousTurn, scores } = data;
+            const winnerByRound = Array.from(new Set(scores.map(score => score.round))).map(round => {
+                const roundScores = scores.filter(score => score.round === round);
+                const roundWinner = roundScores.reduce((winner, player) => player.votes > winner.votes ? player : winner, roundScores[0]);
+                return {
+                    round: round,
+                    winner: roundWinner.player                    
+                }
+            });
+            this.setState({
+                currentRound,
+                currentTurn,
+                previousTurn,
+                scores: winnerByRound
+            })
         })
     }
 
