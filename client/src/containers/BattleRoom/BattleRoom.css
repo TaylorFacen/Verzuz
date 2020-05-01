@@ -59,6 +59,10 @@
     height: 35vh;
 }
 
+.VideoPlayer video {
+    position: relative !important;
+}
+
 .VideoPlayer.active-player {
     box-shadow: 8px 8px 8px #815587;
 }

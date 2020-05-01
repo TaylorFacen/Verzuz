@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { Row, Col, Button } from 'react-bootstrap';
 import Pusher from 'pusher-js';
+import AgoraRTC from 'agora-rtc-sdk'
 
 import './BattleRoom.css';
 import CommentsSection from './CommentsSection';
@@ -14,6 +15,7 @@ import VoteButton from './VoteButton';
 
 import battleService from '../../services/battleService';
 import parseCookie from '../../services/parseCookie';
+
 
 class BattleRoom extends Component {
     state = {
@@ -42,18 +44,107 @@ class BattleRoom extends Component {
             // Set the user
             this.setUser(battleId, cookieData)
             .then(async () => {
-                // Start subscriptions
-                await this.startSubscriptions(battleId, cookieData.phoneNumber || cookieData.email)
+                // Start pusher subscriptions
+                await this.startPushSubscription(battleId, cookieData.phoneNumber || cookieData.email)
 
                 // Get data
                 await this.getData(battleId)
+
+                // Start Media subscriptions
+                await this.startMediaSubscription(battleId, cookieData.userType, cookieData.email || cookieData.phoneNumber)
+
             })
         } else {
             window.location.replace(`/battles/${battleId}/join`)
         }
     }
 
-    async startSubscriptions(battleId, contact){
+    async startMediaSubscription(battleId, userType, uid){
+        battleService.getBattle(battleId)
+        .then(battle => {
+            // rtc object
+            const rtc = {
+                client: null,
+                joined: false,
+                published: false,
+                localStream: null,
+                remoteStreams: [],
+                params: {}
+            };
+
+            // Options for joining a channel
+            var option = {
+                appID: process.env.REACT_APP_AGORA_APP_ID,
+                channel: battle.name,
+                uid: uid
+            }
+
+            // Create a client
+            rtc.client = AgoraRTC.createClient({mode: "live", codec: "h264"});
+            rtc.client.setClientRole(userType === "player" ? "host" : "audience"); 
+
+            // Initialize the client
+            rtc.client.init(option.appID, function () {
+                // Join a channel
+                rtc.client.join(null, option.channel, uid, function (uid) {
+                    rtc.params.uid = uid;
+
+                    if ( userType === "player" ) {
+                        // Create a local stream
+                        rtc.localStream = AgoraRTC.createStream({
+                            streamID: rtc.params.uid,
+                            audio: true,
+                            video: true,
+                            screen: false,
+                        })
+
+                        // Initialize the local stream
+                        rtc.localStream.init(function () {
+                            // play stream with html element id "local_stream"
+                            rtc.localStream.play("local_stream");
+                            rtc.client.publish(rtc.localStream, function (err) {
+                                console.log("publish failed");
+                                console.error(err);
+                            })
+                        }, function (err) {
+                            console.error("init local stream failed ", err);
+                        });
+                    }
+
+                    rtc.client.on("stream-added", function (evt) {  
+                        var remoteStream = evt.stream;
+                        var id = remoteStream.getId();
+                        if (id !== rtc.params.uid) {
+                            rtc.client.subscribe(remoteStream, function (err) {
+                            console.log("stream subscribe failed", err);
+                            })
+                        }
+                    });
+
+                    rtc.client.on("stream-subscribed", function (evt) {
+                        var remoteStream = evt.stream;
+                        var id = remoteStream.getId();
+
+                        // Play the remote stream.
+                        remoteStream.play("remote_video_" + id);
+                    })
+
+                    this.setState({
+                        rtc: rtc
+                    })
+                }, function(err) {
+                    console.error("client join failed", err)
+                })
+                }, (err) => {
+                console.error(err);
+            });
+
+            
+        })
+
+    }
+
+    async startPushSubscription(battleId, contact){
         const pusher = new Pusher(process.env.REACT_APP_PUSHER_APP_KEY, {
             cluster: process.env.REACT_APP_PUSHER_APP_CLUSTER,
             encrypted: true
@@ -254,7 +345,7 @@ class BattleRoom extends Component {
     }
 
     leaveBattle = reason => {
-        const { userType, phoneNumber } = this.state;
+        const { userType, phoneNumber, rtc } = this.state;
         const battleId = this.props.match.params.battleId.toUpperCase();
 
         if ( userType === 'player') {
@@ -267,6 +358,23 @@ class BattleRoom extends Component {
             })
             .catch(error => console.log(error.response) )
         }
+
+        // Leave the channel
+        rtc.client.leave(function () {
+            // Stop playing the local stream
+            rtc.localStream.stop();
+            // Close the local stream
+            rtc.localStream.close();
+            // Stop playing the remote streams and remove the views
+            while (rtc.remoteStreams.length > 0) {
+            var stream = rtc.remoteStreams.shift();
+            stream.stop();
+            }
+            console.log("client leaves channel success");
+        }, function (err) {
+            console.log("channel leave failed");
+            console.error(err);
+        })
     }
 
     onChange = e => {
@@ -355,6 +463,7 @@ class BattleRoom extends Component {
                                         <VideoPlayer 
                                             playerName = { p.name } 
                                             isActive = { isActive }
+                                            videoPlayerId = { p.email === email ? "local_stream" : `remote_video_${p.email}` }
                                         />
                                         <PlayerScore score = { score } />
 
