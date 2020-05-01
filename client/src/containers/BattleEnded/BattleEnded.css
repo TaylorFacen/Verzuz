@@ -1,0 +1,13 @@
+.BattleEnded {
+    max-width: 700px;
+    margin-top: 20px;
+    
+}
+
+.BattleEnded .hero {
+    margin-bottom: 15px;
+}
+
+.BattleEnded .home-link {
+    margin-top: 10px;
+}
