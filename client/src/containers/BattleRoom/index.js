@@ -345,7 +345,7 @@ class BattleRoom extends Component {
                         </Row>
                         <Row className = "participants">
                             { participants.map(p => {
-                                const isActive = currentTurn === p.email;
+                                const isActive = currentTurn === p.email && ( currentRound <= roundCount );
                                 const isCurrentVote = !!userVotes && userVotes.find(v => v.round === (currentRound > roundCount ? currentRound - 1 : currentRound)).player === p.email;
                                 const displayFinishTurnButton = isActive && email === p.email && currentRound <= roundCount;
                                 const score = scores.filter(score => score.winner === p.email).length;
@@ -364,7 +364,7 @@ class BattleRoom extends Component {
                                             </Button>
                                         ) : null }
 
-                                        { userType !== "player" ? (
+                                        { userType !== "player" && currentRound <= roundCount ? (
                                             <VoteButton 
                                                 isCurrentVote = { isCurrentVote }
                                                 castVote = {() => this.castVote(p.email) }
