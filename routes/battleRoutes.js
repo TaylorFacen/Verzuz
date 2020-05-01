@@ -1,6 +1,8 @@
 const pusher = require('./pusher')
 const mongoose = require('mongoose');
 const Battle = mongoose.model('battles');
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Helper Functions
 
@@ -34,6 +36,35 @@ const getScores = async (battleId, currentRound) => {
     })).filter(score => score.round < currentRound )
 }
 
+const sendBattleInvites = async battle => {
+    const participants = battle.participants;
+    participants.forEach(participant => {
+        const data = {
+            "name": participant.name,
+            "battleName": battle.name,
+            "roundCount": battle.roundCount,
+            "opponentName": participants.find(p => p.email !== participant.email).name,
+            "audienceLimit": battle.audienceLimit,
+            "viewerLink": `https://verzuz.app/battles/${battle._id}/join`,
+            "playerLink": `https://verzuz.app/battles/${battle._id}/host`,
+            "accessCode": participant.accessCode
+        }
+
+        const msg = {
+            to: participant.email,
+            from: 'hello@verzuz.app',
+            templateId: 'd-89100ea50b9843789efe286cee700a80',
+            dynamic_template_data: data,
+            customArgs: {
+                env: process.env.ENV
+            }
+        };
+
+        sgMail.send(msg);
+    })
+    
+}
+
 // Routes
 
 module.exports = ( app ) => {
@@ -55,10 +86,13 @@ module.exports = ( app ) => {
             ...req.body
         }
 
-        let battle = await Battle.create(data);
-        return res.status(201).send({
-            error: false,
-            battle
+        Battle.create(data)
+        .then(async battle => {
+            await sendBattleInvites(battle);
+            return res.status(201).send({
+                error: false,
+                battle
+            })
         })
     })
 
