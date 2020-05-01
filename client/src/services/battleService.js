@@ -55,5 +55,13 @@ export default {
     castVote: async (battleId, phoneNumber, currentRound, player) => {
         let res = await axios.post(`/api/battles/${battleId}/votes`, { phoneNumber, currentRound, player });
         return res.data || {};
+    },
+    getVerificationCode: async phoneNumber => {
+        let res = await axios.get(`/api/token?phoneNumber=${phoneNumber}`)
+        return res.data || {}
+    },
+    checkVerificationCode: async (phoneNumber, verificationCode) => {
+        let res = await axios.post(`/api/token`, {phoneNumber, verificationCode})
+        return res.data || {}
     }
 }

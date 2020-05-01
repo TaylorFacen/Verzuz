@@ -113,10 +113,13 @@ class ViewerLogin extends Component {
         .then(canEnter => {
             if ( canEnter ) {
                 // Todo: Send out verification via Twilio Verify
-                this.setState({
-                    displayPhoneNumberForm: false,
-                    displayVerificationCodeForm: true,
-                    displayNameForm: false
+                battleService.getVerificationCode(phoneNumber)
+                .then(resp => {
+                    this.setState({
+                        displayPhoneNumberForm: false,
+                        displayVerificationCodeForm: true,
+                        displayNameForm: false
+                    })
                 })
             }
         })
@@ -124,14 +127,25 @@ class ViewerLogin extends Component {
 
     onSubmitVerificationCode = e => {
         e.preventDefault();
+        const { verificationCode, phoneNumber } = this.state;
         // Todo: Check to see if code is correct via Twilio Verify
-
-        this.setState({
-            displayPhoneNumberForm: false,
-            displayVerificationCodeForm: false,
-            displayNameForm: true,
-            errorMessage: null
+        battleService.checkVerificationCode(phoneNumber, verificationCode)
+        .then(status => {
+            if (status === 'approved') {
+                this.setState({
+                    displayPhoneNumberForm: false,
+                    displayVerificationCodeForm: false,
+                    displayNameForm: true,
+                    errorMessage: null
+                })
+            } else {
+                this.setState({
+                    errorMessage: "Code is incorrect. Please try again."
+                })
+            }
         })
+
+        
     }
 
     setCookie(battleId, userType, name, phoneNumber) {

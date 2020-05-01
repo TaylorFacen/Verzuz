@@ -25,6 +25,7 @@ require('./routes/battleRoutes')(app);
 require('./routes/battleBlacklistRoutes')(app)
 require('./routes/battleCommentsRoutes')(app)
 require('./routes/battleSubscriberRoutes')(app)
+require('./routes/battleTokenRoutes')(app)
 require('./routes/battleViewerRoutes')(app)
 
 if (process.env.NODE_ENV === 'production') {
