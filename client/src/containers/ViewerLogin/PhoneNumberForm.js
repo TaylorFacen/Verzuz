@@ -1,20 +1,20 @@
 import React from 'react';
 import { Button, Form } from 'react-bootstrap';
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 export default ({ onChange, onSubmit, phoneNumber }) => (
     <div className = "PhoneNumberForm">
         <Form onSubmit = { onSubmit }>
             <Form.Group controlId="phoneNumber">
                 <Form.Label>Phone Number</Form.Label>
-                <Form.Control 
-                    type = "tel"
-                    value = { phoneNumber }
-                    name = "phoneNumber"
-                    onChange = { onChange }
+                <PhoneInput
+                    country={'us'}
+                    value={ phoneNumber }
+                    onChange={ onChange }
+                    preferredCountries = { ['us'] }
+                    enableSearch = { true }
                 />
-                <Form.Text className = "text-muted">
-                    Standard messaging rates may apply. Only US numbers are allowed at this time.
-                </Form.Text>
             </Form.Group>
             <Button 
                 type = "submit"

@@ -51,7 +51,8 @@ class BattleRoom extends Component {
                 await this.getData(battleId)
 
                 // Start Media subscriptions
-                await this.startMediaSubscription(battleId, cookieData.userType, cookieData.email || cookieData.phoneNumber)
+                const rtc = await this.startMediaSubscription(battleId, cookieData.userType, cookieData.email || cookieData.phoneNumber);
+                console.log(rtc)
 
             })
         } else {
@@ -128,10 +129,11 @@ class BattleRoom extends Component {
                         // Play the remote stream.
                         remoteStream.play("remote_video_" + id);
                     })
-
+                    
                     this.setState({
                         rtc: rtc
                     })
+
                 }, function(err) {
                     console.error("client join failed", err)
                 })

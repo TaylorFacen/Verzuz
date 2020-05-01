@@ -59,6 +59,12 @@ class ViewerLogin extends Component {
         })
     }
 
+    onPhoneNumberChange = phoneNumber => {
+        this.setState({
+            phoneNumber
+        })
+    }
+
     canEnterBattle(battle, phoneNumber){
         return new Promise((resolve, reject) => {
             // Check to see if battle is full
@@ -210,7 +216,7 @@ class ViewerLogin extends Component {
                     <div>
                         <p>We will need to send you a one time passocde via sms.</p>
                         <PhoneNumberForm 
-                            onChange = { this.onChange.bind(this) }
+                            onChange = { this.onPhoneNumberChange.bind(this) }
                             onSubmit = { this.onSubmitPhoneNumber.bind(this) }
                             phoneNumber = { phoneNumber }
                         /> 
@@ -249,7 +255,7 @@ class ViewerLogin extends Component {
                             <div>
                                 <p>Enter your phone number below to get notified when it begins.</p>
                                 <PhoneNumberForm 
-                                    onChange = { this.onChange.bind(this) }
+                                    onChange = { this.onPhoneNumberChange.bind(this) }
                                     onSubmit = { this.onSubmitPhoneNumber.bind(this) }
                                     phoneNumber = { phoneNumber }
                                 />
