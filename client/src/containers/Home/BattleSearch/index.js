@@ -45,6 +45,7 @@ class BattleSearch extends Component {
         const { battles, searchInput } = this.state;
         return (
             <div className = "BattleSearch">
+                <h5>Search for a Battle</h5>
                 { searchInput.length >= 3 ? (
                     <SearchResults 
                         onClick = { this.onClick.bind(this) }

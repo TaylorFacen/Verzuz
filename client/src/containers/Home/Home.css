@@ -3,5 +3,19 @@
 }
 
 .Home .header {
-    padding: 100px 50px;
+    padding: 0px 50px 100px 50px;
+}
+
+.Home {
+    max-width: 700px;
+    margin-top: 20px;
+}
+
+.Home h1 {
+    margin-bottom: 20px;
+}
+
+.Home .hero {
+    width: 200px;
+    margin-bottom: 10px;
 }
