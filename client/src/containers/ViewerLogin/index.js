@@ -5,6 +5,7 @@ import './ViewerLogin.css';
 import PhoneNumberForm from './PhoneNumberForm';
 import VerificationCodeForm from './VerificationCodeForm';
 import DisplayNameForm from './DisplayNameForm';
+import BattleEnded from '../BattleEnded';
 import BattleNotFound from '../BattleNotFound';
 
 import battleService from '../../services/battleService';
@@ -31,28 +32,24 @@ class ViewerLogin extends Component {
         const battleId = this.props.match.params.battleId.toUpperCase();
         const cookieResp = parseCookie(battleId)
 
-        if ( cookieResp.hasAccess ) {
-            // User is already authenticated
-            window.location.replace(`/battles/${battleId}`)
-        } else {
-            battleService.getBattle(battleId)
-            .then(battle => {
+        battleService.getBattle(battleId)
+        .then(battle => {
+            if ( !!battle.startedOn && !battle.endedOn && cookieResp.hasAccess ) {
+                // User is already authenticated
+                window.location.replace(`/battles/${battleId}`)
+            } else {
                 this.setState({
                     isLoading: false,
                     battle
                 })
+            }
+        })
+        .catch(error => {
+            // Battle not found
+            this.setState({
+                isLoading: false
             })
-            .catch(error => {
-                if (error?.response?.status === 404 ) {
-                    // Battle not found
-                    this.setState({
-                        isLoading: false
-                    })
-                } else {
-                    console.log(error)
-                }
-            })
-        }
+        })
     }
 
     onChange = e => {
@@ -237,41 +234,43 @@ class ViewerLogin extends Component {
         )
     }
 
-    renderSubscriptionScreens(){
-        const { displayPhoneNumberForm, phoneNumber, battle } = this.state;
-        return (
-            <div className = "subscription-screen">
-                <h3>{ battle.name } hasn't started yet.</h3>
-                { displayPhoneNumberForm ? (
-                    <div>
-                        <p>Enter your phone number below to get notified when it begins.</p>
-                        <PhoneNumberForm 
-                            onChange = { this.onChange.bind(this) }
-                            onSubmit = { this.onSubmitPhoneNumber.bind(this) }
-                            phoneNumber = { phoneNumber }
-                        />
-                    </div>
-                ) : (
-                    <div className = "Confirmation">
-                        You'll get a text on { phoneNumber } when the battle starts!
-                    </div>
-                )}
-            </div>
-        )
-    }
-
     render(){
-        const {isLoading, battle } = this.state;
+        const {isLoading, battle, displayPhoneNumberForm, phoneNumber } = this.state;
 
         return !isLoading && (
             <div className = "ViewerLogin">
-                { !battle ? <BattleNotFound /> : (
+
+
+                { !battle ? <BattleNotFound /> : null }
+                { !!battle && !battle.startedOn ? (
+                    <div className = "subscription-screen">
+                        <h3>{ battle.name } hasn't started yet.</h3>
+                        { displayPhoneNumberForm ? (
+                            <div>
+                                <p>Enter your phone number below to get notified when it begins.</p>
+                                <PhoneNumberForm 
+                                    onChange = { this.onChange.bind(this) }
+                                    onSubmit = { this.onSubmitPhoneNumber.bind(this) }
+                                    phoneNumber = { phoneNumber }
+                                />
+                            </div>
+                        ) : (
+                            <div className = "Confirmation">
+                                You'll get a text on { phoneNumber } when the battle starts!
+                            </div>
+                        )}
+                    </div>
+                ) : null }
+                { !!battle && !!battle.startedOn && !battle.endedOn ? (
                     <div className = "module">
                         <Image src = { Earbuds } alt = "Earbuds" className = "hero" />
                         { battle.startedOn ? this.renderLoginScreens() : this.renderSubscriptionScreens() }
                         <p><a href = "/">Home</a></p>
                     </div>
-                ) }
+                ) : null }
+                { !!battle && !!battle.startedOn && !!battle.endedOn ? (
+                    <BattleEnded battle = { battle } />
+                ) : null }
             </div>
         )
     }
