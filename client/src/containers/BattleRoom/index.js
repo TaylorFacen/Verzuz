@@ -51,8 +51,7 @@ class BattleRoom extends Component {
                 await this.getData(battleId)
 
                 // Start Media subscriptions
-                const rtc = await this.startMediaSubscription(battleId, cookieData.userType, cookieData.email || cookieData.phoneNumber);
-                console.log(rtc)
+                await this.startMediaSubscription(battleId, cookieData.userType, cookieData.email || cookieData.phoneNumber);
 
             })
         } else {
@@ -85,9 +84,9 @@ class BattleRoom extends Component {
             rtc.client.setClientRole(userType === "player" ? "host" : "audience"); 
 
             // Initialize the client
-            rtc.client.init(option.appID, function () {
+            rtc.client.init(option.appID, () => {
                 // Join a channel
-                rtc.client.join(null, option.channel, uid, function (uid) {
+                rtc.client.join(null, option.channel, uid, uid => {
                     rtc.params.uid = uid;
 
                     if ( userType === "player" ) {
@@ -100,7 +99,7 @@ class BattleRoom extends Component {
                         })
 
                         // Initialize the local stream
-                        rtc.localStream.init(function () {
+                        rtc.localStream.init(() => {
                             // play stream with html element id "local_stream"
                             rtc.localStream.play("local_stream");
                             rtc.client.publish(rtc.localStream, function (err) {
