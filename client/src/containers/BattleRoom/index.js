@@ -30,8 +30,7 @@ class BattleRoom extends Component {
         currentRound: 1,
         currentTurn: '',
         previousTurn: '',
-        roundCount: null,
-        isMediaConnected: false
+        roundCount: null
     }
 
     componentDidMount(){
@@ -50,6 +49,9 @@ class BattleRoom extends Component {
 
                 // Get data
                 await this.getData(battleId)
+
+                // Subscribe to Video / Audio Stream
+                await this.startMediaSubscription(battleId, cookieData.userType, cookieData.email || cookieData.phoneNumber)
             })
         } else {
             window.location.replace(`/battles/${battleId}/join`)
@@ -112,18 +114,30 @@ class BattleRoom extends Component {
                         }
                     });
 
-                    rtc.client.on("stream-subscribed", function (evt) {
+                    rtc.client.on("stream-subscribed", evt => {
                         var remoteStream = evt.stream;
                         var id = remoteStream.getId();
 
                         // Play the remote stream.
-                        remoteStream.play("remote_video_" + id);
-                        console.log("Playing " + id)
+                        remoteStream.play("remote_video_" + id, err => {
+                            // Update Participant in state
+                            const participants = this.state.participants;
+                            const player = participants.find(p => p.email === id);
+                            const updatedPlayer = {
+                                ...player,
+                                isStreaming: err.video.status === 'play',
+                                isAudioConnected: err.audio.status === 'play'
+                            }
+                            const updatedParticipants = participants.filter(p => p.email !== id).concat([updatedPlayer])
+                            console.log(updatedParticipants);
+                            this.setState({
+                                participants: updatedParticipants
+                            })
+                        });
                     })
                     
                     this.setState({
-                        rtc: rtc,
-                        isMediaConnected: true
+                        rtc: rtc
                     })
 
                 }, function(err) {
@@ -420,10 +434,35 @@ class BattleRoom extends Component {
         })
     }
 
+    // User has to manually toggle audio due to Chrome / Safari rules
+    toggleAudio = playerEmail => {
+        const playerAudio = document.getElementById(`audio${playerEmail}`);
+        const player = this.state.participants.find(p => p.email === playerEmail);
+        console.log(player)
+
+        if ( playerAudio.paused ) {
+            playerAudio.play();
+            this.setState(prevState => ({
+                participants: prevState.participants.filter(p => p.email !== playerEmail).concat([{
+                    ...player,
+                    isAudioConnected: true
+                }])
+            }))
+        } else {
+            playerAudio.pause()
+            this.setState(prevState => ({
+                participants: prevState.participants.filter(p => p.email !== playerEmail).concat([{
+                    ...player,
+                    isAudioConnected: false
+                }])
+            }))
+        }
+    }
+
     render(){
         const { battleName, startedOn, endedOn, currentTurn, currentRound, roundCount } = this.state;
         const { viewers, comments, participants, scores } = this.state;
-        const { isLoading, name, phoneNumber, email, userType, userVotes, isMediaConnected } = this.state;
+        const { isLoading, name, phoneNumber, email, userType, userVotes } = this.state;
         const battleId = this.props.match.params.battleId.toUpperCase();
 
         return !isLoading ? (
@@ -442,15 +481,6 @@ class BattleRoom extends Component {
                                 scores = { scores }
                                 participants = { participants }
                             />
-                            { !isMediaConnected ? (
-                                <Button 
-                                    size = "sm" 
-                                    className = "cta"
-                                    onClick = { () => this.startMediaSubscription(battleId, userType, email || phoneNumber)}
-                                >
-                                    { userType === 'player' ? "Stream Video/Audio" : "View Video" }
-                                </Button>
-                            ): null }
                         </Row>
                         <Row className = "participants">
                             { participants.map(p => {
@@ -462,9 +492,10 @@ class BattleRoom extends Component {
                                 return (
                                     <Col key = { p.email } >
                                         <VideoPlayer 
-                                            playerName = { p.name } 
+                                            player = { p }
                                             isActive = { isActive }
                                             videoPlayerId = { p.email === email ? "local_stream" : `remote_video_${p.email}` }
+                                            toggleAudio = { () => this.toggleAudio(p.email) }
                                         />
                                         <PlayerScore score = { score } />
 
