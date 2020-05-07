@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { Row, Col, Button } from 'react-bootstrap';
-import Pusher from 'pusher-js';
 import AgoraRTC from 'agora-rtc-sdk'
 
 import './BattleRoom.css';
@@ -14,7 +13,8 @@ import ViewerCount from './ViewerCount';
 import VoteButton from './VoteButton';
 
 import battleService from '../../services/battleService';
-import parseCookie from '../../services/parseCookie';
+import cookieService from '../../services/cookieService';
+import PusherClient from '../../services/pusher';
 
 
 class BattleRoom extends Component {
@@ -35,11 +35,12 @@ class BattleRoom extends Component {
 
     componentDidMount(){
         const battleId = this.props.match.params.battleId.toUpperCase();
-        const cookieResp = parseCookie(battleId)
+        const cookieResp = cookieService.parseCookie(battleId)
 
         if ( cookieResp.hasAccess ) {
             // Viewer subscriptions
             const cookieData = cookieResp.data;
+
 
             // Set the user
             this.setUser(battleId, cookieData)
@@ -149,40 +150,18 @@ class BattleRoom extends Component {
         })
     }
 
-    async startPushSubscription(battleId, contact){
-        const pusher = new Pusher(process.env.REACT_APP_PUSHER_APP_KEY, {
-            cluster: process.env.REACT_APP_PUSHER_APP_CLUSTER,
-            encrypted: true
-        });
-        const channel = pusher.subscribe(battleId);
+    async startPushSubscription(battleId, userPhoneNumber){
+        const pusher = new PusherClient();
+        pusher.subscribeToChannel(battleId);
 
-        // New Viewer
-        channel.bind('new-viewer', data => {
-            const { viewer } = data;
-            const comment = {
-                createdOn: Date.now(),
-                text: "joined",
-                name: viewer.name,
-                userId: "system",
-                _id: Math.random().toString(36).substr(2, 10).toUpperCase()
-            }
-
-            const newViewer = {
-                phoneNumber: viewer.phoneNumber,
-                name: viewer.name,
-                userType: viewer.userType,
-                joinedOn: viewer.joinedOn,
-                leftOn: null
-            }
-
+        // Pusher Events
+        pusher.subscribeToNewViewerEvent((comment, newViewer) => {
             this.setState(prevState => {
                 const { comments, viewers } = prevState;
                 // Makes sure not to include duplicate contacts
-                const allComments = comments.filter(c => c._id !== comment._id)
-                allComments.push(comment);
+                const allComments = comments.filter(c => c._id !== comment._id).concat([comment])
 
-                const allViewers = viewers.filter(v => v.phoneNumber !== viewer.phoneNumber)
-                allViewers.push(newViewer)
+                const allViewers = viewers.filter(v => v.phoneNumber !== newViewer.phoneNumber).concat([newViewer])
 
                 return {
                     comments: allComments,
@@ -191,59 +170,50 @@ class BattleRoom extends Component {
             })
         })
 
-        // Boot User
-        channel.bind('boot-viewer', data => {
-            if ( contact === data.phoneNumber ) {
-                // Remove all subscriptions
-                pusher.unsubscribe(battleId)
+        pusher.subscribeToBootViewerEvent((phoneNumber, reason) => {
+            if ( userPhoneNumber === phoneNumber ) {
+                // Unsubscribe from Pusher
+                pusher.unsubscribeFromChannel(battleId);
 
-                // Display boot reason (e.g. New session, blocked from battle, battle ended), left battle
+                // Unsubscribe from Agora
+
+                // Remove Cookie
+                cookieService.removeCookie()
+
+                this.setState({
+                    bootReason: reason
+                })
             } else {
                 // Decrease the viewer count
                 this.setState(prevState => ({
-                    viewers: prevState.viewers.filter(v => v.phoneNumber !== data.phoneNumber)
+                    viewers: prevState.viewers.filter(v => v.phoneNumber !== phoneNumber)
                 }))
             }
         })
 
-        // New Comment
-        channel.bind('new-comment', data => {
-            const { comment } = data;
-
+        pusher.subscribeToNewCommentEvent(comment => {
             this.setState(prevState => {
                 const { comments } = prevState;
-                const otherComments = comments.filter(c => c._id !== comment._id)
-                const allComments = otherComments.concat([comment])
-
+                // Make sure comments are unique
+                const allComments = comments.filter(c => c._id !== comment._id).concat([comment])
+                
                 return { comments: allComments }
             })
         })
 
-        // Battle Started
-        channel.bind('start-battle', data => {
+        pusher.subscribeToBattleStartedEvent(currentTurn => {
             this.setState({
-                currentTurn: data.currentTurn,
+                currentTurn,
                 currentRound: 1,
                 startedOn: Date.now()
             })
         })
 
-        // Battle Ended
-        channel.bind('end-battle', data => {
-            console.log("Battle ended")
+        pusher.subscribeToBattleEndedEvent(data => {
+            console.log(data)
         })
 
-        // Next Turn
-        channel.bind('next-turn', data => {
-            const { currentRound, currentTurn, previousTurn, scores } = data;
-            const winnerByRound = Array.from(new Set(scores.map(score => score.round))).map(round => {
-                const roundScores = scores.filter(score => score.round === round && !!score.player);
-                const roundWinner = roundScores.reduce((winner, player) => player.votes > winner.votes ? player : winner, roundScores[0]);
-                return {
-                    round: round,
-                    winner: roundWinner.player                    
-                }
-            });
+        pusher.subscribeToNextTurnEvent((currentRound, currentTurn, previousTurn, winnerByRound) => {
             this.setState({
                 currentRound,
                 currentTurn,
@@ -257,12 +227,13 @@ class BattleRoom extends Component {
         const { userType, name, email, phoneNumber } = cookieData
 
         if (userType === 'player') {
-            this.setState(() => ({
-                    name: name,
-                    email: email,
-                    userType: userType
-                })
-            )
+            const user = {
+                name,
+                email,
+                userType
+            }
+
+            this.setState(user)
         } else {
             battleService.addViewer(battleId, phoneNumber, userType, name)
             .then(viewer => {

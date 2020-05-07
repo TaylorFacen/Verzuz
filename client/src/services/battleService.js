@@ -63,5 +63,21 @@ export default {
     checkVerificationCode: async (phoneNumber, verificationCode) => {
         let res = await axios.post(`/api/token`, {phoneNumber, verificationCode})
         return res.data || {}
+    },
+
+    // Calculations
+    calculateWinnerByRound: scores => {
+        if (scores.length > 0) {
+            return Array.from(new Set(scores.map(score => score.round))).map(round => {
+                const roundScores = scores.filter(score => score.round === round && !!score.player);
+                const roundWinner = roundScores.reduce((winner, player) => player.votes > winner.votes ? player : winner, roundScores[0]);
+                return {
+                    round: round,
+                    winner: roundWinner?.player
+                }
+            }).sort((round1, round2) => round1.round > round2.round ? 1 : -1 )
+        } else {
+            return null;
+        }
     }
 }

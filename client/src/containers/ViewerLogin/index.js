@@ -9,7 +9,7 @@ import BattleEnded from '../BattleEnded';
 import BattleNotFound from '../BattleNotFound';
 
 import battleService from '../../services/battleService';
-import parseCookie from '../../services/parseCookie';
+import cookieService from '../../services/cookieService';
 
 const Earbuds = require('../../images/earbuds.png')
 
@@ -30,8 +30,7 @@ class ViewerLogin extends Component {
 
     componentDidMount(){
         const battleId = this.props.match.params.battleId.toUpperCase();
-        const cookieResp = parseCookie(battleId)
-
+        const cookieResp = cookieService.parseCookie(battleId)
         battleService.getBattle(battleId)
         .then(battle => {
             if ( !!battle.startedOn && !battle.endedOn && cookieResp.hasAccess ) {
@@ -181,7 +180,7 @@ class ViewerLogin extends Component {
                 })
             } else {
                 // Set cookie
-                this.setCookie(battle._id, "viewer", name, phoneNumber)
+                cookieService.setCookie(battle._id, "viewer", name, phoneNumber, null)
                 .then(() => {
                     // Redirect to battle page
                     window.location.replace(`/battles/${battle._id}`)
