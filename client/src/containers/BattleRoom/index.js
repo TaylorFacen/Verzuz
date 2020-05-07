@@ -31,7 +31,7 @@ class BattleRoom extends Component {
         currentTurn: '',
         previousTurn: '',
         roundCount: null,
-        isMediaPlaying: false
+        isMediaConnected: false
     }
 
     componentDidMount(){
@@ -50,10 +50,6 @@ class BattleRoom extends Component {
 
                 // Get data
                 await this.getData(battleId)
-
-                // Start Media subscriptions
-                await this.startMediaSubscription(battleId, cookieData.userType, cookieData.email || cookieData.phoneNumber);
-
             })
         } else {
             window.location.replace(`/battles/${battleId}/join`)
@@ -94,7 +90,9 @@ class BattleRoom extends Component {
                         })
 
                         // Initialize the local stream
-                        rtc.localStream.init(async () => {
+                        rtc.localStream.init(() => {
+                            // play stream with html element id "local_stream"
+                            rtc.localStream.play("local_stream");
                             rtc.client.publish(rtc.localStream, function (err) {
                                 console.log("publish failed");
                                 console.error(err);
@@ -120,10 +118,12 @@ class BattleRoom extends Component {
 
                         // Play the remote stream.
                         remoteStream.play("remote_video_" + id);
+                        console.log("Playing " + id)
                     })
                     
                     this.setState({
-                        rtc: rtc
+                        rtc: rtc,
+                        isMediaConnected: true
                     })
 
                 }, function(err) {
@@ -132,28 +132,7 @@ class BattleRoom extends Component {
                 }, (err) => {
                 console.error(err);
             });
-
-            
         })
-
-    }
-
-    async togglePlayMedia(){
-        const { rtc, isMediaPlaying } = this.state;
-
-        if ( isMediaPlaying ) {
-            rtc.localStream.stop();
-            this.setState({
-                isMediaPlaying: false
-            })
-        } else {
-            // play stream with html element id "local_stream"
-            rtc.localStream.play("local_stream");
-            this.setState({
-                isMediaPlaying: true
-            })   
-        }
-
     }
 
     async startPushSubscription(battleId, contact){
@@ -444,13 +423,14 @@ class BattleRoom extends Component {
     render(){
         const { battleName, startedOn, endedOn, currentTurn, currentRound, roundCount } = this.state;
         const { viewers, comments, participants, scores } = this.state;
-        const { isLoading, name, phoneNumber, email, userType, userVotes, isMediaPlaying } = this.state;
+        const { isLoading, name, phoneNumber, email, userType, userVotes, isMediaConnected } = this.state;
+        const battleId = this.props.match.params.battleId.toUpperCase();
 
         return !isLoading ? (
             <div className = "BattleRoom">
                 <Navigation 
                     battleName = { battleName }
-                    battleId = { this.props.match.params.battleId.toUpperCase() }
+                    battleId = { battleId }
                     leaveBattle = { this.leaveBattle.bind(this) }
                 />
                 <Row className = "battle">
@@ -462,6 +442,15 @@ class BattleRoom extends Component {
                                 scores = { scores }
                                 participants = { participants }
                             />
+                            { !isMediaConnected ? (
+                                <Button 
+                                    size = "sm" 
+                                    className = "cta"
+                                    onClick = { () => this.startMediaSubscription(battleId, userType, email || phoneNumber)}
+                                >
+                                    { userType === 'player' ? "Stream Video/Audio" : "View Video" }
+                                </Button>
+                            ): null }
                         </Row>
                         <Row className = "participants">
                             { participants.map(p => {
@@ -476,8 +465,6 @@ class BattleRoom extends Component {
                                             playerName = { p.name } 
                                             isActive = { isActive }
                                             videoPlayerId = { p.email === email ? "local_stream" : `remote_video_${p.email}` }
-                                            isMediaPlaying = { isMediaPlaying }
-                                            togglePlayMedia = { this.togglePlayMedia.bind(this) }
                                         />
                                         <PlayerScore score = { score } />
 
@@ -512,7 +499,7 @@ class BattleRoom extends Component {
                             comments = { comments } 
                             name = { name } 
                             userId = { phoneNumber || email }
-                            battleId = { this.props.match.params.battleId.toUpperCase() }
+                            battleId = { battleId }
                         />
                     </Col>
                 </Row>
