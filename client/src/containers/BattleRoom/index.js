@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { Row, Col, Button } from 'react-bootstrap';
-import AgoraRTC from 'agora-rtc-sdk'
 
 import './BattleRoom.css';
 import CommentsSection from './CommentsSection';
@@ -12,6 +11,7 @@ import VideoPlayer from './VideoPlayer';
 import ViewerCount from './ViewerCount';
 import VoteButton from './VoteButton';
 
+import AgoraClient from '../../services/agora';
 import battleService from '../../services/battleService';
 import cookieService from '../../services/cookieService';
 import PusherClient from '../../services/pusher';
@@ -46,7 +46,7 @@ class BattleRoom extends Component {
             this.setUser(battleId, cookieData)
             .then(async () => {
                 // Start pusher subscriptions
-                await this.startPushSubscription(battleId, cookieData.phoneNumber || cookieData.email)
+                await this.startPusherSubscription(battleId, cookieData.phoneNumber || cookieData.email)
 
                 // Get data
                 await this.getData(battleId)
@@ -62,95 +62,30 @@ class BattleRoom extends Component {
     async startMediaSubscription(battleId, userType, uid){
         battleService.getBattle(battleId)
         .then(battle => {
-            // rtc object
-            const rtc = {
-                client: null,
-                joined: false,
-                published: false,
-                localStream: null,
-                remoteStreams: [],
-                params: {}
-            };
+            const updateParticipantsCallback = (playerEmail, isStreaming, isAudioConnected) => {
+                const participants = this.state.participants;
+                const player = participants.find(p => p.email === playerEmail);
+                const updatedPlayer = {
+                    ...player,
+                    isStreaming,
+                    isAudioConnected
+                }
 
-            // Create a client
-            rtc.client = AgoraRTC.createClient({mode: "live", codec: "h264"});
-            rtc.client.setClientRole(userType === "player" ? "host" : "audience"); 
-
-            // Initialize the client
-            const agoraAppId = process.env.REACT_APP_AGORA_APP_ID
-            rtc.client.init(agoraAppId, () => {
-                // Join a channel
-                rtc.client.join(null, battle.name, uid, uid => {
-                    rtc.params.uid = uid;
-
-                    if ( userType === "player" ) {
-                        // Create a local stream
-                        rtc.localStream = AgoraRTC.createStream({
-                            streamID: rtc.params.uid,
-                            audio: true,
-                            video: true,
-                            screen: false,
-                        })
-
-                        // Initialize the local stream
-                        rtc.localStream.init(() => {
-                            // play stream with html element id "local_stream"
-                            rtc.localStream.play("local_stream");
-                            rtc.client.publish(rtc.localStream, function (err) {
-                                console.log("publish failed");
-                                console.error(err);
-                            })
-                        }, function (err) {
-                            console.error("init local stream failed ", err);
-                        });
-                    }
-
-                    rtc.client.on("stream-added", function (evt) {  
-                        var remoteStream = evt.stream;
-                        var id = remoteStream.getId();
-                        if (id !== rtc.params.uid) {
-                            rtc.client.subscribe(remoteStream, function (err) {
-                            console.log("stream subscribe failed", err);
-                            })
-                        }
-                    });
-
-                    rtc.client.on("stream-subscribed", evt => {
-                        var remoteStream = evt.stream;
-                        var id = remoteStream.getId();
-
-                        // Play the remote stream.
-                        remoteStream.play("remote_video_" + id, err => {
-                            // Update Participant in state
-                            const participants = this.state.participants;
-                            const player = participants.find(p => p.email === id);
-                            const updatedPlayer = {
-                                ...player,
-                                isStreaming: err.video.status === 'play',
-                                isAudioConnected: err.audio.status === 'play'
-                            }
-                            const updatedParticipants = participants.filter(p => p.email !== id).concat([updatedPlayer])
-                            console.log(updatedParticipants);
-                            this.setState({
-                                participants: updatedParticipants
-                            })
-                        });
-                    })
-                    
-                    this.setState({
-                        rtc: rtc
-                    })
-
-                }, function(err) {
-                    console.error("client join failed", err)
+                const updatedParticipants = participants.filter(p => p.email !== playerEmail).concat([updatedPlayer])
+                this.setState({
+                    participants: updatedParticipants
                 })
-                }, (err) => {
-                console.error(err);
-            });
+            }
+
+            const agora = new AgoraClient();
+            agora.joinChannel(userType, battle.name, uid, updateParticipantsCallback)
+            this.setState({
+                agora
+            })
         })
     }
 
-    async startPushSubscription(battleId, userPhoneNumber){
+    async startPusherSubscription(battleId, userPhoneNumber){
         const pusher = new PusherClient();
         pusher.subscribeToChannel(battleId);
 
@@ -176,6 +111,8 @@ class BattleRoom extends Component {
                 pusher.unsubscribeFromChannel(battleId);
 
                 // Unsubscribe from Agora
+                const { agora } = this.state;
+                agora.leaveChannel();
 
                 // Remove Cookie
                 cookieService.removeCookie()
@@ -220,6 +157,10 @@ class BattleRoom extends Component {
                 previousTurn,
                 scores: winnerByRound
             })
+        })
+
+        this.setState({
+            pusher
         })
     }
 
@@ -321,36 +262,24 @@ class BattleRoom extends Component {
     }
 
     leaveBattle = reason => {
-        const { userType, phoneNumber, rtc } = this.state;
+        const { userType, phoneNumber, pusher, agora } = this.state;
         const battleId = this.props.match.params.battleId.toUpperCase();
 
-        if ( userType === 'player') {
-            console.log("Player leaves")
-        } else {
-            battleService.deleteViewer(battleId, phoneNumber, reason )
-            .then(() => {
-                // Remove cookie
-                document.cookie = "verzuz=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
-            })
-            .catch(error => console.log(error.response) )
-        }
+        // Unsubscribe from Pusher
+        pusher.unsubscribeFromChannel(battleId);
 
-        // Leave the channel
-        rtc.client.leave(function () {
-            // Stop playing the local stream
-            rtc.localStream.stop();
-            // Close the local stream
-            rtc.localStream.close();
-            // Stop playing the remote streams and remove the views
-            while (rtc.remoteStreams.length > 0) {
-            var stream = rtc.remoteStreams.shift();
-            stream.stop();
-            }
-            console.log("client leaves channel success");
-        }, function (err) {
-            console.log("channel leave failed");
-            console.error(err);
-        })
+        // Unsubscribe from Agora
+        agora.leaveChannel();
+
+        // If not a player, "delete" viewer from battle's viewers list
+        const deleteViewerPromise = userType !== 'player' ? battleService.deleteViewer(battleId, phoneNumber, reason ) : true;
+
+        // Remove cookie
+        const cookiePromise = cookieService.removeCookie();
+
+        // Redirect back to home
+        Promise.all([deleteViewerPromise, cookiePromise])
+        .then(() => window.location.replace(`/`))
     }
 
     onChange = e => {
