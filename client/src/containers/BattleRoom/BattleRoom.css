@@ -59,6 +59,11 @@
     height: 35vh;
 }
 
+.VideoPlayer .media-toggle {
+    height: 30px;
+    margin-left: 10px;
+}
+
 .VideoPlayer video {
     position: relative !important;
 }

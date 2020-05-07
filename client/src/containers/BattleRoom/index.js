@@ -30,7 +30,8 @@ class BattleRoom extends Component {
         currentRound: 1,
         currentTurn: '',
         previousTurn: '',
-        roundCount: null
+        roundCount: null,
+        isMediaPlaying: false
     }
 
     componentDidMount(){
@@ -72,21 +73,15 @@ class BattleRoom extends Component {
                 params: {}
             };
 
-            // Options for joining a channel
-            var option = {
-                appID: process.env.REACT_APP_AGORA_APP_ID,
-                channel: battle.name,
-                uid: uid
-            }
-
             // Create a client
             rtc.client = AgoraRTC.createClient({mode: "live", codec: "h264"});
             rtc.client.setClientRole(userType === "player" ? "host" : "audience"); 
 
             // Initialize the client
-            rtc.client.init(option.appID, () => {
+            const agoraAppId = process.env.REACT_APP_AGORA_APP_ID
+            rtc.client.init(agoraAppId, () => {
                 // Join a channel
-                rtc.client.join(null, option.channel, uid, uid => {
+                rtc.client.join(null, battle.name, uid, uid => {
                     rtc.params.uid = uid;
 
                     if ( userType === "player" ) {
@@ -99,9 +94,7 @@ class BattleRoom extends Component {
                         })
 
                         // Initialize the local stream
-                        rtc.localStream.init(() => {
-                            // play stream with html element id "local_stream"
-                            rtc.localStream.play("local_stream");
+                        rtc.localStream.init(async () => {
                             rtc.client.publish(rtc.localStream, function (err) {
                                 console.log("publish failed");
                                 console.error(err);
@@ -142,6 +135,24 @@ class BattleRoom extends Component {
 
             
         })
+
+    }
+
+    async togglePlayMedia(){
+        const { rtc, isMediaPlaying } = this.state;
+
+        if ( isMediaPlaying ) {
+            rtc.localStream.stop();
+            this.setState({
+                isMediaPlaying: false
+            })
+        } else {
+            // play stream with html element id "local_stream"
+            rtc.localStream.play("local_stream");
+            this.setState({
+                isMediaPlaying: true
+            })   
+        }
 
     }
 
@@ -433,7 +444,7 @@ class BattleRoom extends Component {
     render(){
         const { battleName, startedOn, endedOn, currentTurn, currentRound, roundCount } = this.state;
         const { viewers, comments, participants, scores } = this.state;
-        const { isLoading, name, phoneNumber, email, userType, userVotes } = this.state;
+        const { isLoading, name, phoneNumber, email, userType, userVotes, isMediaPlaying } = this.state;
 
         return !isLoading ? (
             <div className = "BattleRoom">
@@ -465,6 +476,8 @@ class BattleRoom extends Component {
                                             playerName = { p.name } 
                                             isActive = { isActive }
                                             videoPlayerId = { p.email === email ? "local_stream" : `remote_video_${p.email}` }
+                                            isMediaPlaying = { isMediaPlaying }
+                                            togglePlayMedia = { this.togglePlayMedia.bind(this) }
                                         />
                                         <PlayerScore score = { score } />
 
