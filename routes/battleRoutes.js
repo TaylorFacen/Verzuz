@@ -45,8 +45,8 @@ const sendBattleInvites = async battle => {
             "roundCount": battle.roundCount,
             "opponentName": participants.find(p => p.email !== participant.email).name,
             "audienceLimit": battle.audienceLimit,
-            "viewerLink": `https://verzuz.app/battles/${battle._id}/join`,
-            "playerLink": `https://verzuz.app/battles/${battle._id}/host`,
+            "viewerLink": `https://www.verzuz.app/battles/${battle._id}/join`,
+            "playerLink": `https://www.verzuz.app/battles/${battle._id}/host`,
             "accessCode": participant.accessCode
         }
 

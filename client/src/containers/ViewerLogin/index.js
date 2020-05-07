@@ -263,7 +263,7 @@ class ViewerLogin extends Component {
 
                 { !battle ? <BattleNotFound /> : null }
                 { !!battle && !battle.startedOn ? (
-                    <div className = "subscription-screen">
+                    <div className = "subscription-screen module">
                         <h3>{ battle.name } hasn't started yet.</h3>
                         { displayPhoneNumberForm ? (
                             <div>

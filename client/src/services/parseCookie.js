@@ -1,7 +1,7 @@
 // Checks to see if a user is authenticated for the selected battle and parses their profile info
 
 export default battleId => {
-    const verzuzCookieQuery = document.cookie.split(';').filter(c => c.substr(0, 6) === 'verzuz');
+    const verzuzCookieQuery = document.cookie.split(';').filter(c => c.trim().substr(0, 6) === 'verzuz');
 
     if ( verzuzCookieQuery.length === 1) {
         const verzuzCookie = verzuzCookieQuery[0].split('=')[1];

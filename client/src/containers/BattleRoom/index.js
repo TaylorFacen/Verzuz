@@ -50,10 +50,8 @@ class BattleRoom extends Component {
                 // Get data
                 await this.getData(battleId)
 
-                // Start Media subscriptions
-                const rtc = await this.startMediaSubscription(battleId, cookieData.userType, cookieData.email || cookieData.phoneNumber);
-                console.log(rtc)
-
+                // Subscribe to Video / Audio Stream
+                await this.startMediaSubscription(battleId, cookieData.userType, cookieData.email || cookieData.phoneNumber)
             })
         } else {
             window.location.replace(`/battles/${battleId}/join`)
@@ -73,21 +71,15 @@ class BattleRoom extends Component {
                 params: {}
             };
 
-            // Options for joining a channel
-            var option = {
-                appID: process.env.REACT_APP_AGORA_APP_ID,
-                channel: battle.name,
-                uid: uid
-            }
-
             // Create a client
             rtc.client = AgoraRTC.createClient({mode: "live", codec: "h264"});
             rtc.client.setClientRole(userType === "player" ? "host" : "audience"); 
 
             // Initialize the client
-            rtc.client.init(option.appID, function () {
+            const agoraAppId = process.env.REACT_APP_AGORA_APP_ID
+            rtc.client.init(agoraAppId, () => {
                 // Join a channel
-                rtc.client.join(null, option.channel, uid, function (uid) {
+                rtc.client.join(null, battle.name, uid, uid => {
                     rtc.params.uid = uid;
 
                     if ( userType === "player" ) {
@@ -100,7 +92,7 @@ class BattleRoom extends Component {
                         })
 
                         // Initialize the local stream
-                        rtc.localStream.init(function () {
+                        rtc.localStream.init(() => {
                             // play stream with html element id "local_stream"
                             rtc.localStream.play("local_stream");
                             rtc.client.publish(rtc.localStream, function (err) {
@@ -122,12 +114,26 @@ class BattleRoom extends Component {
                         }
                     });
 
-                    rtc.client.on("stream-subscribed", function (evt) {
+                    rtc.client.on("stream-subscribed", evt => {
                         var remoteStream = evt.stream;
                         var id = remoteStream.getId();
 
                         // Play the remote stream.
-                        remoteStream.play("remote_video_" + id);
+                        remoteStream.play("remote_video_" + id, err => {
+                            // Update Participant in state
+                            const participants = this.state.participants;
+                            const player = participants.find(p => p.email === id);
+                            const updatedPlayer = {
+                                ...player,
+                                isStreaming: err.video.status === 'play',
+                                isAudioConnected: err.audio.status === 'play'
+                            }
+                            const updatedParticipants = participants.filter(p => p.email !== id).concat([updatedPlayer])
+                            console.log(updatedParticipants);
+                            this.setState({
+                                participants: updatedParticipants
+                            })
+                        });
                     })
                     
                     this.setState({
@@ -140,10 +146,7 @@ class BattleRoom extends Component {
                 }, (err) => {
                 console.error(err);
             });
-
-            
         })
-
     }
 
     async startPushSubscription(battleId, contact){
@@ -431,16 +434,42 @@ class BattleRoom extends Component {
         })
     }
 
+    // User has to manually toggle audio due to Chrome / Safari rules
+    toggleAudio = playerEmail => {
+        const playerAudio = document.getElementById(`audio${playerEmail}`);
+        const player = this.state.participants.find(p => p.email === playerEmail);
+        console.log(player)
+
+        if ( playerAudio.paused ) {
+            playerAudio.play();
+            this.setState(prevState => ({
+                participants: prevState.participants.filter(p => p.email !== playerEmail).concat([{
+                    ...player,
+                    isAudioConnected: true
+                }])
+            }))
+        } else {
+            playerAudio.pause()
+            this.setState(prevState => ({
+                participants: prevState.participants.filter(p => p.email !== playerEmail).concat([{
+                    ...player,
+                    isAudioConnected: false
+                }])
+            }))
+        }
+    }
+
     render(){
         const { battleName, startedOn, endedOn, currentTurn, currentRound, roundCount } = this.state;
         const { viewers, comments, participants, scores } = this.state;
         const { isLoading, name, phoneNumber, email, userType, userVotes } = this.state;
+        const battleId = this.props.match.params.battleId.toUpperCase();
 
         return !isLoading ? (
             <div className = "BattleRoom">
                 <Navigation 
                     battleName = { battleName }
-                    battleId = { this.props.match.params.battleId.toUpperCase() }
+                    battleId = { battleId }
                     leaveBattle = { this.leaveBattle.bind(this) }
                 />
                 <Row className = "battle">
@@ -463,9 +492,10 @@ class BattleRoom extends Component {
                                 return (
                                     <Col key = { p.email } >
                                         <VideoPlayer 
-                                            playerName = { p.name } 
+                                            player = { p }
                                             isActive = { isActive }
                                             videoPlayerId = { p.email === email ? "local_stream" : `remote_video_${p.email}` }
+                                            toggleAudio = { () => this.toggleAudio(p.email) }
                                         />
                                         <PlayerScore score = { score } />
 
@@ -500,7 +530,7 @@ class BattleRoom extends Component {
                             comments = { comments } 
                             name = { name } 
                             userId = { phoneNumber || email }
-                            battleId = { this.props.match.params.battleId.toUpperCase() }
+                            battleId = { battleId }
                         />
                     </Col>
                 </Row>

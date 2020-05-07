@@ -59,6 +59,16 @@
     height: 35vh;
 }
 
+.VideoPlayer .toggle-audio-button {
+    margin-left: 10px;
+    padding: 0px;
+    font-size: 25px;
+}
+
+.VideoPlayer .toggle-audio-button svg {
+    color: #815587;
+}
+
 .VideoPlayer video {
     position: relative !important;
 }
