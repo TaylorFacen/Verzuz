@@ -284,7 +284,7 @@ class BattleRoom extends Component {
         })
     }
 
-    leaveBattle = reason => {
+    async leaveBattle() {
         const { userType, phoneNumber, pusher, agora } = this.state;
         const battleId = this.props.match.params.battleId.toUpperCase();
 
@@ -295,13 +295,12 @@ class BattleRoom extends Component {
         agora.leaveChannel();
 
         // If not a player, "delete" viewer from battle's viewers list
-        const deleteViewerPromise = userType !== 'player' ? battleService.deleteViewer(battleId, phoneNumber, reason ) : true;
+        if ( userType !== 'player') {
+            await battleService.deleteViewer(battleId, phoneNumber, null )
+        }
 
         // Remove cookie
-        const cookiePromise = cookieService.removeCookie();
-
-        // Redirect back to home
-        Promise.all([deleteViewerPromise, cookiePromise])
+        cookieService.removeCookie()
         .then(() => window.location.replace(`/`))
     }
 
@@ -321,7 +320,7 @@ class BattleRoom extends Component {
         battleService.startBattle(battleId, currentTurnParticipant.email)
         .then(() => {
             this.setState({
-                startedOn: Date.now(),
+                startedOn: Date.now()
             })
         })
         .catch(error => console.log(error))
