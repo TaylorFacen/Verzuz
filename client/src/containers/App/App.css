@@ -79,8 +79,8 @@ input:-webkit-autofill:active  {
     outline: none;
 }
 
-.App a, .App a:hover {
-    color: #815587;
+.App a, .App a:hover, .BattleEndedModal a, .BattleEndedModal a:hover{
+    color: #815587 ;
 }
 
 .module {

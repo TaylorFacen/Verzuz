@@ -15,7 +15,8 @@ export default ({ battle }) => {
         const playerFinalScores = players.map(player => ({
             player: player,
             score: winnerByRound.filter(score => score.winner === player).length
-        }))
+        // Remove any rounds where no one received any votes
+        })).filter(score => score.player)
         const winner = playerFinalScores.reduce((winner, curr) => {
             if ( curr.score > winner.score ) {
                 return curr
@@ -35,7 +36,7 @@ export default ({ battle }) => {
                     const playerName = battle.participants.find(p => p.email === round.winner)?.name;
                     return (
                         <div key = { round.round }>
-                            Round { round.round }: { playerName }
+                            Round { round.round }: { playerName ? playerName : "No One" }
                         </div>
                     )
                 })}

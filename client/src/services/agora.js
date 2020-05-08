@@ -14,8 +14,10 @@ class AgoraClient {
         }
     }
 
-    joinChannel = (userType, battleName, uid, updateParticipantsCallback) => {
+    joinChannel = (userType, battleName, contact, updateParticipantsCallback) => {
         this.rtc.client.setClientRole(userType === "player" ? "host" : "audience");
+
+        const uid = userType === 'player' ? contact : contact + String(Date.now())
 
         // Initialize the client
         this.rtc.client.init(agoraAppId, () => {
@@ -60,8 +62,9 @@ class AgoraClient {
 
                     // Play the remote stream
                     remoteStream.play("remote_video_" + id, err => {
-                        const isStreaming = err.video.status === 'play';
-                        const isAudioConnected = err.audio.state === 'play';
+                        // err is null if there wasn't an error
+                        const isStreaming = err ? err?.video?.status === 'play' : true;
+                        const isAudioConnected = err ? err?.audio?.status === 'play' : true;
 
                         updateParticipantsCallback(id, isStreaming, isAudioConnected)
                     });

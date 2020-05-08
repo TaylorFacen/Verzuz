@@ -37,19 +37,19 @@ class PlayerControls extends Component {
     }
 
     render(){
-        const { startedOn, endedOn } = this.props;
+        const { battle } = this.props;
         const { displayStartBattleModal, displayEndBattleModal } = this.state;
     
         return (
             <div className = "PlayerControls">
-                { !startedOn && !endedOn ? (
+                { !battle.startedOn && !battle.endedOn ? (
                     <StartBattle 
                         show = { displayStartBattleModal }
                         toggleModal = { () => this.toggleModal("displayStartBattleModal") }
                         startBattle = { this.startBattle.bind(this) }
                     />
                 ) : null }
-                { !!startedOn && !endedOn ? (
+                { !!battle.startedOn && !battle.endedOn ? (
                     <EndBattle 
                         show = { displayEndBattleModal }
                         toggleModal = { () => this.toggleModal("displayEndBattleModal") }

@@ -27,7 +27,7 @@ module.exports = {
     },
     endBattle: async battleId => {
         pusher.trigger(battleId, 'end-battle', {
-            battleId: battleId
+            battleId
         })
     },
     startBattle: async (battleId, currentTurn) => {

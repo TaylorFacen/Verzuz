@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { Row, Col, Button } from 'react-bootstrap';
 
 import './BattleRoom.css';
+import BattleEndedModal from './BattleEndedModal';
 import CommentsSection from './CommentsSection';
 import CurrentRound from './CurrentRound';
 import Navigation from './Navigation';
@@ -63,17 +64,23 @@ class BattleRoom extends Component {
         battleService.getBattle(battleId)
         .then(battle => {
             const updateParticipantsCallback = (playerEmail, isStreaming, isAudioConnected) => {
-                const participants = this.state.participants;
-                const player = participants.find(p => p.email === playerEmail);
-                const updatedPlayer = {
-                    ...player,
-                    isStreaming,
-                    isAudioConnected
-                }
+                this.setState(prevState => {
+                    const { battle } = prevState;
+                    const { participants } = battle;
 
-                const updatedParticipants = participants.filter(p => p.email !== playerEmail).concat([updatedPlayer])
-                this.setState({
-                    participants: updatedParticipants
+                    const player = participants.find(p => p.email === playerEmail);
+                    const updatedPlayer = {
+                        ...player,
+                        isStreaming,
+                        isAudioConnected
+                    }
+
+                    return {
+                        battle: {
+                            ...battle,
+                            participants: participants.filter(p => p.email !== playerEmail).concat([updatedPlayer])
+                        }
+                    }
                 })
             }
 
@@ -146,8 +153,23 @@ class BattleRoom extends Component {
             })
         })
 
-        pusher.subscribeToBattleEndedEvent(data => {
-            console.log(data)
+        pusher.subscribeToBattleEndedEvent(async data => {
+            const { agora, pusher } = this.state;
+
+            // Get the most up to date battle info
+            const battle = await battleService.getBattle(data.battleId);
+
+            // Unsubscribe from channels
+            agora.leaveChannel();
+            pusher.unsubscribeFromChannel(battle._id);
+            cookieService.removeCookie();
+
+            this.setState({
+                battle: {
+                    ...battle,
+                    endedOn: Date.now()
+                }
+            })
         })
 
         pusher.subscribeToNextTurnEvent((currentRound, currentTurn, previousTurn, winnerByRound) => {
@@ -244,6 +266,7 @@ class BattleRoom extends Component {
                 });
 
                 return {
+                    battle,
                     viewers: uniqueViewers,
                     battleName: battle.name,
                     participants: battle.participants,
@@ -337,57 +360,51 @@ class BattleRoom extends Component {
     // User has to manually toggle audio due to Chrome / Safari rules
     toggleAudio = playerEmail => {
         const playerAudio = document.getElementById(`audio${playerEmail}`);
-        const player = this.state.participants.find(p => p.email === playerEmail);
-        console.log(player)
+        
+        playerAudio.paused ? playerAudio.play() : playerAudio.pause()
 
-        if ( playerAudio.paused ) {
-            playerAudio.play();
-            this.setState(prevState => ({
-                participants: prevState.participants.filter(p => p.email !== playerEmail).concat([{
-                    ...player,
-                    isAudioConnected: true
-                }])
-            }))
-        } else {
-            playerAudio.pause()
-            this.setState(prevState => ({
-                participants: prevState.participants.filter(p => p.email !== playerEmail).concat([{
-                    ...player,
-                    isAudioConnected: false
-                }])
-            }))
-        }
+        this.setState(prevState => {
+            const { battle } = prevState;
+            const { participants } = battle
+            const player = participants.find(p => p.email === playerEmail);
+
+            return {
+                battle: {
+                    ...battle,
+                    participants: participants.filter(p => p.email !== playerEmail).concat([{
+                        ...player,
+                        isAudioConnected: !player.isAudioConnected
+                    }])
+                }
+            }
+        })
     }
 
     render(){
-        const { battleName, startedOn, endedOn, currentTurn, currentRound, roundCount } = this.state;
-        const { viewers, comments, participants, scores } = this.state;
+        const { battle, viewers, comments, scores } = this.state;
         const { isLoading, name, phoneNumber, email, userType, userVotes } = this.state;
-        const battleId = this.props.match.params.battleId.toUpperCase();
 
         return !isLoading ? (
             <div className = "BattleRoom">
                 <Navigation 
-                    battleName = { battleName }
-                    battleId = { battleId }
+                    battleName = { battle.name }
+                    battleId = { battle._id }
                     leaveBattle = { this.leaveBattle.bind(this) }
                 />
                 <Row className = "battle">
                     <Col xl = {9} lg = {9} md = {9} sm = {12} xs = {12} className = "battle-room-details">
                         <Row className = "round">
                             <CurrentRound 
-                                currentRound = { currentRound }
-                                roundCount = { roundCount }
+                                battle = { battle }
                                 scores = { scores }
-                                participants = { participants }
                             />
                         </Row>
                         <Row className = "participants">
-                            { participants.map(p => {
-                                const isActive = currentTurn === p.email && ( currentRound <= roundCount );
-                                const isCurrentVote = !!userVotes && userVotes.find(v => v.round === (currentRound > roundCount ? currentRound - 1 : currentRound)).player === p.email;
-                                const displayFinishTurnButton = isActive && email === p.email && currentRound <= roundCount;
-                                const score = scores.filter(score => score.winner === p.email).length;
+                            { battle.participants.map(p => {
+                                const isActive = battle.currentTurn === p.email && ( battle.currentRound <= battle.roundCount );
+                                const isCurrentVote = !!userVotes && userVotes.find(v => v.round === (battle.currentRound > battle.roundCount ? battle.currentRound - 1 : battle.currentRound)).player === p.email;
+                                const displayFinishTurnButton = isActive && email === p.email && battle.currentRound <= battle.roundCount;
+                                const score = scores.filter(score => score.winner === p.email && score.round < battle.currentRound).length;
 
                                 return (
                                     <Col key = { p.email } >
@@ -405,7 +422,7 @@ class BattleRoom extends Component {
                                             </Button>
                                         ) : null }
 
-                                        { userType !== "player" && currentRound <= roundCount ? (
+                                        { userType !== "player" && battle.currentRound <= battle.roundCount ? (
                                             <VoteButton 
                                                 isCurrentVote = { isCurrentVote }
                                                 castVote = {() => this.castVote(p.email) }
@@ -417,8 +434,7 @@ class BattleRoom extends Component {
                         </Row>
                         { userType === 'player' ? (
                             <PlayerControls 
-                                startedOn = { startedOn }
-                                endedOn = { endedOn }
+                                battle = { battle }
                                 startBattle = { this.startBattle.bind(this) }
                                 endBattle = { this.endBattle.bind(this) }
                             />
@@ -430,9 +446,10 @@ class BattleRoom extends Component {
                             comments = { comments } 
                             name = { name } 
                             userId = { phoneNumber || email }
-                            battleId = { battleId }
+                            battleId = { battle._id }
                         />
                     </Col>
+                    <BattleEndedModal battle = { battle } />
                 </Row>
             </div>
         ) : null
