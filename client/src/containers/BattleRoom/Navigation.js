@@ -8,7 +8,7 @@ export default ({ battleName, battleId, leaveBattle }) => (
             <a href = {`/battles/${battleId}`}>{ battleName }</a>
         </Navbar.Text>
         <Navbar.Text>
-            <Button onClick = { () => leaveBattle("left battle") } variant="link">Leave</Button>
+            <Button onClick = { leaveBattle } variant="link">Leave</Button>
         </Navbar.Text>
     </Navbar>
 )

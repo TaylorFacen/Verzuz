@@ -33,7 +33,7 @@ const getScores = async (battleId, currentRound) => {
         round: score._id.round,
         player: score._id.player,
         votes: score.count
-    })).filter(score => score.round < currentRound )
+    })).filter(score => score.round <= currentRound )
 }
 
 const sendBattleInvites = async battle => {

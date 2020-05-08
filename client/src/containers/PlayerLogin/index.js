@@ -6,7 +6,7 @@ import BattleNotFound from '../BattleNotFound';
 import PlayerLoginForm from './PlayerLoginForm';
 
 import battleService from '../../services/battleService';
-import parseCookie from '../../services/parseCookie';
+import cookieService from '../../services/cookieService';
 
 const Play = require('../../images/play.png')
 
@@ -28,7 +28,7 @@ class PlayerLogin extends Component {
 
     componentDidMount(){
         const battleId = this.props.match.params.battleId.toUpperCase();
-        const cookieResp = parseCookie(battleId)
+        const cookieResp = cookieService.parseCookie(battleId)
 
         if ( cookieResp.hasAccess && cookieResp.data.userType === "player" ) {
             // User is already authenticated as a player

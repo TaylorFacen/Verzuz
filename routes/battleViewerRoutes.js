@@ -44,7 +44,8 @@ const handleExistingViewer = async (battleId, phoneNumber, name) => {
             { "$set": {"viewers.$.name": name}}
         );
 
-        const resp = await pusher.bootViewer(battleId, phoneNumber, 'new session');
+        // Will add back in the future
+        // const resp = await pusher.bootViewer(battleId, phoneNumber, 'new session');
         return viewer
     }
 }

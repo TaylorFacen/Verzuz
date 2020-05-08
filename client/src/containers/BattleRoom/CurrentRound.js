@@ -1,6 +1,7 @@
 import React from 'react';
 
-export default ({ currentRound, roundCount, scores, participants }) => {
+export default ({ battle, scores }) => {
+    const { currentRound, roundCount, participants } = battle;
     if ( currentRound > roundCount ) {
         const players = Array.from(new Set(scores.map(score => score.winner)))
         const playerFinalScores = players.map(player => ({

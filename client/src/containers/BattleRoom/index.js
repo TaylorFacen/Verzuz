@@ -1,9 +1,8 @@
 import React, { Component } from "react";
 import { Row, Col, Button } from 'react-bootstrap';
-import Pusher from 'pusher-js';
-import AgoraRTC from 'agora-rtc-sdk'
 
 import './BattleRoom.css';
+import BattleEndedModal from './BattleEndedModal';
 import CommentsSection from './CommentsSection';
 import CurrentRound from './CurrentRound';
 import Navigation from './Navigation';
@@ -13,8 +12,10 @@ import VideoPlayer from './VideoPlayer';
 import ViewerCount from './ViewerCount';
 import VoteButton from './VoteButton';
 
+import AgoraClient from '../../services/agora';
 import battleService from '../../services/battleService';
-import parseCookie from '../../services/parseCookie';
+import cookieService from '../../services/cookieService';
+import PusherClient from '../../services/pusher';
 
 
 class BattleRoom extends Component {
@@ -35,17 +36,18 @@ class BattleRoom extends Component {
 
     componentDidMount(){
         const battleId = this.props.match.params.battleId.toUpperCase();
-        const cookieResp = parseCookie(battleId)
+        const cookieResp = cookieService.parseCookie(battleId)
 
         if ( cookieResp.hasAccess ) {
             // Viewer subscriptions
             const cookieData = cookieResp.data;
 
+
             // Set the user
             this.setUser(battleId, cookieData)
             .then(async () => {
                 // Start pusher subscriptions
-                await this.startPushSubscription(battleId, cookieData.phoneNumber || cookieData.email)
+                await this.startPusherSubscription(battleId, cookieData.phoneNumber || cookieData.email)
 
                 // Get data
                 await this.getData(battleId)
@@ -61,128 +63,47 @@ class BattleRoom extends Component {
     async startMediaSubscription(battleId, userType, uid){
         battleService.getBattle(battleId)
         .then(battle => {
-            // rtc object
-            const rtc = {
-                client: null,
-                joined: false,
-                published: false,
-                localStream: null,
-                remoteStreams: [],
-                params: {}
-            };
+            const updateParticipantsCallback = (playerEmail, isStreaming, isAudioConnected) => {
+                this.setState(prevState => {
+                    const { battle } = prevState;
+                    const { participants } = battle;
 
-            // Create a client
-            rtc.client = AgoraRTC.createClient({mode: "live", codec: "h264"});
-            rtc.client.setClientRole(userType === "player" ? "host" : "audience"); 
-
-            // Initialize the client
-            const agoraAppId = process.env.REACT_APP_AGORA_APP_ID
-            rtc.client.init(agoraAppId, () => {
-                // Join a channel
-                rtc.client.join(null, battle.name, uid, uid => {
-                    rtc.params.uid = uid;
-
-                    if ( userType === "player" ) {
-                        // Create a local stream
-                        rtc.localStream = AgoraRTC.createStream({
-                            streamID: rtc.params.uid,
-                            audio: true,
-                            video: true,
-                            screen: false,
-                        })
-
-                        // Initialize the local stream
-                        rtc.localStream.init(() => {
-                            // play stream with html element id "local_stream"
-                            rtc.localStream.play("local_stream");
-                            rtc.client.publish(rtc.localStream, function (err) {
-                                console.log("publish failed");
-                                console.error(err);
-                            })
-                        }, function (err) {
-                            console.error("init local stream failed ", err);
-                        });
+                    const player = participants.find(p => p.email === playerEmail);
+                    const updatedPlayer = {
+                        ...player,
+                        isStreaming,
+                        isAudioConnected
                     }
 
-                    rtc.client.on("stream-added", function (evt) {  
-                        var remoteStream = evt.stream;
-                        var id = remoteStream.getId();
-                        if (id !== rtc.params.uid) {
-                            rtc.client.subscribe(remoteStream, function (err) {
-                            console.log("stream subscribe failed", err);
-                            })
+                    return {
+                        battle: {
+                            ...battle,
+                            participants: participants.filter(p => p.email !== playerEmail).concat([updatedPlayer])
                         }
-                    });
-
-                    rtc.client.on("stream-subscribed", evt => {
-                        var remoteStream = evt.stream;
-                        var id = remoteStream.getId();
-
-                        // Play the remote stream.
-                        remoteStream.play("remote_video_" + id, err => {
-                            // Update Participant in state
-                            const participants = this.state.participants;
-                            const player = participants.find(p => p.email === id);
-                            const updatedPlayer = {
-                                ...player,
-                                isStreaming: err.video.status === 'play',
-                                isAudioConnected: err.audio.status === 'play'
-                            }
-                            const updatedParticipants = participants.filter(p => p.email !== id).concat([updatedPlayer])
-                            console.log(updatedParticipants);
-                            this.setState({
-                                participants: updatedParticipants
-                            })
-                        });
-                    })
-                    
-                    this.setState({
-                        rtc: rtc
-                    })
-
-                }, function(err) {
-                    console.error("client join failed", err)
+                    }
                 })
-                }, (err) => {
-                console.error(err);
-            });
+            }
+
+            const agora = new AgoraClient();
+            agora.joinChannel(userType, battle.name, uid, updateParticipantsCallback)
+            this.setState({
+                agora
+            })
         })
     }
 
-    async startPushSubscription(battleId, contact){
-        const pusher = new Pusher(process.env.REACT_APP_PUSHER_APP_KEY, {
-            cluster: process.env.REACT_APP_PUSHER_APP_CLUSTER,
-            encrypted: true
-        });
-        const channel = pusher.subscribe(battleId);
+    async startPusherSubscription(battleId, userPhoneNumber){
+        const pusher = new PusherClient();
+        pusher.subscribeToChannel(battleId);
 
-        // New Viewer
-        channel.bind('new-viewer', data => {
-            const { viewer } = data;
-            const comment = {
-                createdOn: Date.now(),
-                text: "joined",
-                name: viewer.name,
-                userId: "system",
-                _id: Math.random().toString(36).substr(2, 10).toUpperCase()
-            }
-
-            const newViewer = {
-                phoneNumber: viewer.phoneNumber,
-                name: viewer.name,
-                userType: viewer.userType,
-                joinedOn: viewer.joinedOn,
-                leftOn: null
-            }
-
+        // Pusher Events
+        pusher.subscribeToNewViewerEvent((comment, newViewer) => {
             this.setState(prevState => {
                 const { comments, viewers } = prevState;
                 // Makes sure not to include duplicate contacts
-                const allComments = comments.filter(c => c._id !== comment._id)
-                allComments.push(comment);
+                const allComments = comments.filter(c => c._id !== comment._id).concat([comment])
 
-                const allViewers = viewers.filter(v => v.phoneNumber !== viewer.phoneNumber)
-                allViewers.push(newViewer)
+                const allViewers = viewers.filter(v => v.phoneNumber !== newViewer.phoneNumber).concat([newViewer])
 
                 return {
                     comments: allComments,
@@ -191,59 +112,67 @@ class BattleRoom extends Component {
             })
         })
 
-        // Boot User
-        channel.bind('boot-viewer', data => {
-            if ( contact === data.phoneNumber ) {
-                // Remove all subscriptions
-                pusher.unsubscribe(battleId)
+        pusher.subscribeToBootViewerEvent((phoneNumber, reason) => {
+            if ( userPhoneNumber === phoneNumber ) {
+                // Unsubscribe from Pusher
+                pusher.unsubscribeFromChannel(battleId);
 
-                // Display boot reason (e.g. New session, blocked from battle, battle ended), left battle
+                // Unsubscribe from Agora
+                const { agora } = this.state;
+                agora.leaveChannel();
+
+                // Remove Cookie
+                cookieService.removeCookie()
+
+                this.setState({
+                    bootReason: reason
+                })
             } else {
                 // Decrease the viewer count
                 this.setState(prevState => ({
-                    viewers: prevState.viewers.filter(v => v.phoneNumber !== data.phoneNumber)
+                    viewers: prevState.viewers.filter(v => v.phoneNumber !== phoneNumber)
                 }))
             }
         })
 
-        // New Comment
-        channel.bind('new-comment', data => {
-            const { comment } = data;
-
+        pusher.subscribeToNewCommentEvent(comment => {
             this.setState(prevState => {
                 const { comments } = prevState;
-                const otherComments = comments.filter(c => c._id !== comment._id)
-                const allComments = otherComments.concat([comment])
-
+                // Make sure comments are unique
+                const allComments = comments.filter(c => c._id !== comment._id).concat([comment])
+                
                 return { comments: allComments }
             })
         })
 
-        // Battle Started
-        channel.bind('start-battle', data => {
+        pusher.subscribeToBattleStartedEvent(currentTurn => {
             this.setState({
-                currentTurn: data.currentTurn,
+                currentTurn,
                 currentRound: 1,
                 startedOn: Date.now()
             })
         })
 
-        // Battle Ended
-        channel.bind('end-battle', data => {
-            console.log("Battle ended")
+        pusher.subscribeToBattleEndedEvent(async data => {
+            const { agora, pusher } = this.state;
+
+            // Get the most up to date battle info
+            const battle = await battleService.getBattle(data.battleId);
+
+            // Unsubscribe from channels
+            agora.leaveChannel();
+            pusher.unsubscribeFromChannel(battle._id);
+            cookieService.removeCookie();
+
+            this.setState({
+                battle: {
+                    ...battle,
+                    endedOn: Date.now()
+                }
+            })
         })
 
-        // Next Turn
-        channel.bind('next-turn', data => {
-            const { currentRound, currentTurn, previousTurn, scores } = data;
-            const winnerByRound = Array.from(new Set(scores.map(score => score.round))).map(round => {
-                const roundScores = scores.filter(score => score.round === round && !!score.player);
-                const roundWinner = roundScores.reduce((winner, player) => player.votes > winner.votes ? player : winner, roundScores[0]);
-                return {
-                    round: round,
-                    winner: roundWinner.player                    
-                }
-            });
+        pusher.subscribeToNextTurnEvent((currentRound, currentTurn, previousTurn, winnerByRound) => {
             this.setState({
                 currentRound,
                 currentTurn,
@@ -251,18 +180,23 @@ class BattleRoom extends Component {
                 scores: winnerByRound
             })
         })
+
+        this.setState({
+            pusher
+        })
     }
 
     async setUser(battleId, cookieData) {
         const { userType, name, email, phoneNumber } = cookieData
 
         if (userType === 'player') {
-            this.setState(() => ({
-                    name: name,
-                    email: email,
-                    userType: userType
-                })
-            )
+            const user = {
+                name,
+                email,
+                userType
+            }
+
+            this.setState(user)
         } else {
             battleService.addViewer(battleId, phoneNumber, userType, name)
             .then(viewer => {
@@ -332,6 +266,7 @@ class BattleRoom extends Component {
                 });
 
                 return {
+                    battle,
                     viewers: uniqueViewers,
                     battleName: battle.name,
                     participants: battle.participants,
@@ -349,37 +284,24 @@ class BattleRoom extends Component {
         })
     }
 
-    leaveBattle = reason => {
-        const { userType, phoneNumber, rtc } = this.state;
+    async leaveBattle() {
+        const { userType, phoneNumber, pusher, agora } = this.state;
         const battleId = this.props.match.params.battleId.toUpperCase();
 
-        if ( userType === 'player') {
-            console.log("Player leaves")
-        } else {
-            battleService.deleteViewer(battleId, phoneNumber, reason )
-            .then(() => {
-                // Remove cookie
-                document.cookie = "verzuz=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
-            })
-            .catch(error => console.log(error.response) )
+        // Unsubscribe from Pusher
+        pusher.unsubscribeFromChannel(battleId);
+
+        // Unsubscribe from Agora
+        agora.leaveChannel();
+
+        // If not a player, "delete" viewer from battle's viewers list
+        if ( userType !== 'player') {
+            await battleService.deleteViewer(battleId, phoneNumber, null )
         }
 
-        // Leave the channel
-        rtc.client.leave(function () {
-            // Stop playing the local stream
-            rtc.localStream.stop();
-            // Close the local stream
-            rtc.localStream.close();
-            // Stop playing the remote streams and remove the views
-            while (rtc.remoteStreams.length > 0) {
-            var stream = rtc.remoteStreams.shift();
-            stream.stop();
-            }
-            console.log("client leaves channel success");
-        }, function (err) {
-            console.log("channel leave failed");
-            console.error(err);
-        })
+        // Remove cookie
+        cookieService.removeCookie()
+        .then(() => window.location.replace(`/`))
     }
 
     onChange = e => {
@@ -398,7 +320,7 @@ class BattleRoom extends Component {
         battleService.startBattle(battleId, currentTurnParticipant.email)
         .then(() => {
             this.setState({
-                startedOn: Date.now(),
+                startedOn: Date.now()
             })
         })
         .catch(error => console.log(error))
@@ -437,57 +359,51 @@ class BattleRoom extends Component {
     // User has to manually toggle audio due to Chrome / Safari rules
     toggleAudio = playerEmail => {
         const playerAudio = document.getElementById(`audio${playerEmail}`);
-        const player = this.state.participants.find(p => p.email === playerEmail);
-        console.log(player)
+        
+        playerAudio.paused ? playerAudio.play() : playerAudio.pause()
 
-        if ( playerAudio.paused ) {
-            playerAudio.play();
-            this.setState(prevState => ({
-                participants: prevState.participants.filter(p => p.email !== playerEmail).concat([{
-                    ...player,
-                    isAudioConnected: true
-                }])
-            }))
-        } else {
-            playerAudio.pause()
-            this.setState(prevState => ({
-                participants: prevState.participants.filter(p => p.email !== playerEmail).concat([{
-                    ...player,
-                    isAudioConnected: false
-                }])
-            }))
-        }
+        this.setState(prevState => {
+            const { battle } = prevState;
+            const { participants } = battle
+            const player = participants.find(p => p.email === playerEmail);
+
+            return {
+                battle: {
+                    ...battle,
+                    participants: participants.filter(p => p.email !== playerEmail).concat([{
+                        ...player,
+                        isAudioConnected: !player.isAudioConnected
+                    }])
+                }
+            }
+        })
     }
 
     render(){
-        const { battleName, startedOn, endedOn, currentTurn, currentRound, roundCount } = this.state;
-        const { viewers, comments, participants, scores } = this.state;
+        const { battle, viewers, comments, scores } = this.state;
         const { isLoading, name, phoneNumber, email, userType, userVotes } = this.state;
-        const battleId = this.props.match.params.battleId.toUpperCase();
 
         return !isLoading ? (
             <div className = "BattleRoom">
                 <Navigation 
-                    battleName = { battleName }
-                    battleId = { battleId }
+                    battleName = { battle.name }
+                    battleId = { battle._id }
                     leaveBattle = { this.leaveBattle.bind(this) }
                 />
                 <Row className = "battle">
                     <Col xl = {9} lg = {9} md = {9} sm = {12} xs = {12} className = "battle-room-details">
                         <Row className = "round">
                             <CurrentRound 
-                                currentRound = { currentRound }
-                                roundCount = { roundCount }
+                                battle = { battle }
                                 scores = { scores }
-                                participants = { participants }
                             />
                         </Row>
                         <Row className = "participants">
-                            { participants.map(p => {
-                                const isActive = currentTurn === p.email && ( currentRound <= roundCount );
-                                const isCurrentVote = !!userVotes && userVotes.find(v => v.round === (currentRound > roundCount ? currentRound - 1 : currentRound)).player === p.email;
-                                const displayFinishTurnButton = isActive && email === p.email && currentRound <= roundCount;
-                                const score = scores.filter(score => score.winner === p.email).length;
+                            { battle.participants.map(p => {
+                                const isActive = battle.currentTurn === p.email && ( battle.currentRound <= battle.roundCount );
+                                const isCurrentVote = !!userVotes && userVotes.find(v => v.round === (battle.currentRound > battle.roundCount ? battle.currentRound - 1 : battle.currentRound)).player === p.email;
+                                const displayFinishTurnButton = isActive && email === p.email && battle.currentRound <= battle.roundCount;
+                                const score = scores.filter(score => score.winner === p.email && score.round < battle.currentRound).length;
 
                                 return (
                                     <Col key = { p.email } >
@@ -505,7 +421,7 @@ class BattleRoom extends Component {
                                             </Button>
                                         ) : null }
 
-                                        { userType !== "player" && currentRound <= roundCount ? (
+                                        { userType !== "player" && battle.currentRound <= battle.roundCount ? (
                                             <VoteButton 
                                                 isCurrentVote = { isCurrentVote }
                                                 castVote = {() => this.castVote(p.email) }
@@ -517,8 +433,7 @@ class BattleRoom extends Component {
                         </Row>
                         { userType === 'player' ? (
                             <PlayerControls 
-                                startedOn = { startedOn }
-                                endedOn = { endedOn }
+                                battle = { battle }
                                 startBattle = { this.startBattle.bind(this) }
                                 endBattle = { this.endBattle.bind(this) }
                             />
@@ -530,9 +445,10 @@ class BattleRoom extends Component {
                             comments = { comments } 
                             name = { name } 
                             userId = { phoneNumber || email }
-                            battleId = { battleId }
+                            battleId = { battle._id }
                         />
                     </Col>
+                    <BattleEndedModal battle = { battle } />
                 </Row>
             </div>
         ) : null
