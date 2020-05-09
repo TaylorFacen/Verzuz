@@ -2,6 +2,7 @@ const pusher = require('./pusher')
 const mongoose = require('mongoose');
 const Battle = mongoose.model('battles');
 const sgMail = require('@sendgrid/mail');
+const { sendBattleStartMessage } = require('./communications');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Helper Functions
@@ -108,6 +109,10 @@ module.exports = ( app ) => {
             })
 
             await pusher.startBattle(battleId, currentTurn)
+
+            // Send sms notification
+            await sendBattleStartMessage(updatedBattle)
+
             return res.status(201).send("OK")
         } else {
             return res.status(400).send("currentTurn required")
