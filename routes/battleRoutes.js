@@ -80,7 +80,8 @@ module.exports = ( app ) => {
             await pusher.startBattle(battleId, currentTurn)
 
             // Send sms notification
-            await sendBattleStartMessage(updatedBattle)
+            const resp = await sendBattleStartMessage(updatedBattle);
+            console.log(resp)
 
             return res.status(201).send("OK")
         } else {

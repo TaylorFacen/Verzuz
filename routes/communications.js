@@ -35,8 +35,8 @@ const sendBattleInvites = async battle => {
             "roundCount": battle.roundCount,
             "opponentName": participants.find(p => p.email !== participant.email).name,
             "audienceLimit": battle.audienceLimit,
-            "viewerLink": `https://www.verzuz.app/battles/${battle._id}/join`,
-            "playerLink": `https://www.verzuz.app/battles/${battle._id}/host`,
+            "viewerLink": `${CLIENT_URL}/battles/${battle._id}/join`,
+            "playerLink": `${CLIENT_URL}/battles/${battle._id}/host`,
             "accessCode": participant.accessCode
         }
 
@@ -62,7 +62,7 @@ const sendBattleStartMessage = async battle => {
     const battleUrl = `${CLIENT_URL}/battles/${battleId}`
 
     const message = `${battleName} just started! Join the battle by heading to ${battleUrl}`;
-
+    console.log("Sending")
     return subscribers.map(phoneNumber => (
         client.messages.create({
             body: message,

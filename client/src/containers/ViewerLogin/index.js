@@ -192,8 +192,7 @@ class ViewerLogin extends Component {
     onCreateSubscription = e => {
         e.preventDefault();
 
-        const { battle } = this.props;
-        const { phoneNumber } = this.state;
+        const { battle, phoneNumber } = this.state;
 
         battleService.addSubscriber(battle._id, phoneNumber )
         .then(() => {
@@ -269,7 +268,7 @@ class ViewerLogin extends Component {
                                 <p>Enter your phone number below to get notified when it begins.</p>
                                 <PhoneNumberForm 
                                     onChange = { this.onPhoneNumberChange.bind(this) }
-                                    onSubmit = { this.onSubmitPhoneNumber.bind(this) }
+                                    onSubmit = { this.onCreateSubscription.bind(this) }
                                     phoneNumber = { phoneNumber }
                                 />
                             </div>
