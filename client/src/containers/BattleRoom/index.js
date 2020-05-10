@@ -146,10 +146,16 @@ class BattleRoom extends Component {
         })
 
         pusher.subscribeToBattleStartedEvent(currentTurn => {
-            this.setState({
-                currentTurn,
-                currentRound: 1,
-                startedOn: Date.now()
+            this.setState(prevState => {
+                const { battle } = prevState;
+                return {
+                    battle: {
+                        ...battle,
+                        startedOn: Date.now(),
+                        currentRound: 1,
+                        currentTurn
+                    }
+                }
             })
         })
 
@@ -319,8 +325,16 @@ class BattleRoom extends Component {
 
         battleService.startBattle(battleId, currentTurnParticipant.email)
         .then(() => {
-            this.setState({
-                startedOn: Date.now()
+            this.setState(prevState => {
+                const { battle } = prevState;
+                return {
+                    battle: {
+                        ...battle,
+                        startedOn: Date.now(),
+                        currentRound: 1,
+                        currentTurn: currentTurnParticipant.email
+                    }
+                }
             })
         })
         .catch(error => console.log(error))
