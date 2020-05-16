@@ -43,8 +43,9 @@ class CommentsSection extends Component {
     render() {
         const { battle, user } = this.props;
         const { newComment } = this.state;
-        const sortedComments = battle.comments.sort((c1, c2) => c1.createdOn >= c2.createdOn ? 1 : -1 )
         // Make sure to sort comments by timestamp
+        const sortedComments = battle.comments.sort((c1, c2) => c1.createdOn >= c2.createdOn ? 1 : -1 )
+
         return (
             <div className = "CommentsSection module">
                 <Comments comments = { sortedComments } />

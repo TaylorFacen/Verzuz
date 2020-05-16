@@ -62,7 +62,6 @@ const sendBattleStartMessage = async battle => {
     const battleUrl = `${CLIENT_URL}/battles/${battleId}`
 
     const message = `${battleName} just started! Join the battle by heading to ${battleUrl}`;
-    console.log("Sending")
     return subscribers.map(phoneNumber => (
         client.messages.create({
             body: message,

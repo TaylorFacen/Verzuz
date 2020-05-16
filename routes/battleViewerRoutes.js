@@ -4,10 +4,10 @@ const Battle = mongoose.model('battles');
 
 // Helper Functions //
 
-const addUserVotes = async ( battle, viewer) => {
+const addUserVotes = ( battle, viewer) => {
     const rounds = Array.from(new Set(battle.votes.map(v => v.round)));
     const votes = rounds.map(round => {
-        const userVote = battle.votes.find(v => v.round === round && v.viewers.includes(viewer._id));
+        const userVote = battle.votes.find(v => v.round === round && v.viewers.includes(viewer.id));
         if ( userVote ) {
             return { round: round, playerId: userVote.player}
         } else {
@@ -26,17 +26,22 @@ const addUserVotes = async ( battle, viewer) => {
 module.exports = ( app ) => {
     app.get(`/api/battles/:battleId/viewers`, async (req, res) => {
         const { battleId } = req.params;
-        const userId = req.query;
+        const { userId } = req.query;
 
         if ( userId ) {
             const battle = await Battle.findById(battleId);
             
             if ( battle ) {
                 const viewers = battle.viewers;
-                const viewer = viewers.find(v => v._id === userId);
-                // Add viewer votes
-                const updatedViewer = addUserVotes(battle, viewer);
-                return res.status(201).send(updatedViewer) 
+                const viewer = viewers.find(v => v.id === userId);
+                
+                if ( viewer ) {
+                    // Add viewer votes
+                    const updatedViewer = addUserVotes(battle, viewer.toObject());
+                    return res.status(201).send(updatedViewer)
+                } else {
+                    return res.status(404).send("Viewer not Found")
+                }
             } else {
                 return res.status(404).send("Battle not Found")
             }
@@ -72,13 +77,9 @@ module.exports = ( app ) => {
                 
                         // Will add back in the future
                         // await pusher.bootViewer(battleId, phoneNumber, 'new session');
-                    }
+                    }          
 
-                    // Add viewer votes
-                    const updatedViewer = addUserVotes(battle, viewer);
-                    
-
-                    return res.status(201).send(updatedViewer) 
+                    return res.status(201).send(viewer) 
 
                 } else {
                     const newViewer = {
@@ -89,17 +90,13 @@ module.exports = ( app ) => {
                         leftOn: null
                     }
                     // Add viewer to battle
-                    Battle.findByIdAndUpdate(battleId, { $push: { viewers: newViewer } })
-                    .then(async battle => {
-                        const viewer = battle.viewers.find(viewer => viewer.phoneNumber === phoneNumber);
+                    Battle.findByIdAndUpdate(battleId, { $push: { viewers: newViewer } }, { new: true }, async ( err, battle) => {
+                        const viewer = battle.viewers.find(v => v.phoneNumber === phoneNumber);
 
                         // Trigger pusher event
                         await pusher.addViewer(battleId, viewer)
 
-                        // Add viewer votes
-                        const updatedViewer = addUserVotes(battle, viewer);
-
-                        return res.status(201).send(updatedViewer)
+                        return res.status(201).send(viewer)
                     })
                 }
             } else {

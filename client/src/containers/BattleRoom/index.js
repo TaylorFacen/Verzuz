@@ -37,14 +37,14 @@ class BattleRoom extends Component {
             await battle.init();
 
             // Get user
-            const user = new User(battleId, userId, userType)
+            const user = new User(battleId, userId, userType);
             await user.init();
 
             // Start pusher subscriptions
             const pusher = this.startPusherSubscription(battleId, user.phoneNumber || user.email);
 
             // Start Agora subscription
-            const agora = this.startMediaSubscription(battle.name, user.userType, user.email || user.phoneNumber )
+            const agora = this.startMediaSubscription(battle.name, user.userType, user.id )
 
             this.setState({
                 battle,
@@ -150,7 +150,7 @@ class BattleRoom extends Component {
         return pusher
     }
 
-    async startMediaSubscription(battleName, userType, uid){
+    async startMediaSubscription(battleName, userType, userId){
         const updatePlayersCallback = (playerId, isStreaming, isAudioConnected) => {
             this.setState(prevState => {
                 const { battle } = prevState;
@@ -170,7 +170,7 @@ class BattleRoom extends Component {
         }
 
         const agora = new AgoraClient();
-        agora.joinChannel(userType, battleName, uid, updatePlayersCallback)
+        agora.joinChannel(userType, battleName, userId, updatePlayersCallback)
         
         return agora
     }
@@ -196,11 +196,9 @@ class BattleRoom extends Component {
     }
 
     async startBattle(){
-        this.setState(async prevState => {
-            const { battle } = prevState;
-            await battle.start();
-            return { battle }
-        })
+        const { battle } = this.state;
+        await battle.start();
+        this.setState({ battle })
     }
 
     async endBattle(){
@@ -237,6 +235,7 @@ class BattleRoom extends Component {
             const { battle } = prevState;
             const { players } = battle
             const player = players.find(p => p._id === playerId);
+            console.log(player)
             const updatedPlayer = {
                 ...player,
                 isAudioConnected: !player.isAudioConnected
@@ -249,7 +248,7 @@ class BattleRoom extends Component {
 
     render(){
         const { battle, user, isLoading } = this.state;
-        console.log(battle)
+
         return !isLoading ? (
             <div className = "BattleRoom">
                 <Navigation 
@@ -262,13 +261,13 @@ class BattleRoom extends Component {
                             <CurrentRound battle = { battle } />
                         </Row>
                         <Row className = "players">
-                            { battle.players.map(p => {
+                            { battle.players.sort((a, b) => a.name > b.name ? 1 : -1).map(p => {
                                 const isActive = battle.currentTurn === p._id && ( battle.currentRound <= battle.roundCount );
                                 const isCurrentVote = !!user.votes && user.votes.find(v => v.round === (battle.currentRound > battle.roundCount ? battle.currentRound - 1 : battle.currentRound)).playerId === p._id;
                                 const displayFinishTurnButton = isActive && user.id === p._id && battle.currentRound <= battle.roundCount;
                                 const score = battle.playerScores.find(s => s.player._id === p._id)?.score
                                 return (
-                                    <Col key = { p.email } >
+                                    <Col key = { p._id } >
                                         <VideoPlayer 
                                             player = { p }
                                             isActive = { isActive }
@@ -302,7 +301,7 @@ class BattleRoom extends Component {
                         ) : null}
                     </Col>
                     <Col xl = {3} lg = {3} md = {3} sm = {12} xs = {12} className = "battle-room-social">
-                        <ViewerCount viewers = { battle.viewerCount } />
+                        <ViewerCount viewerCount = { battle.viewerCount } />
                         <CommentsSection 
                             battle = { battle }
                             user = { user }

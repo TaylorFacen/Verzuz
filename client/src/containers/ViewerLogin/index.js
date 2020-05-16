@@ -141,12 +141,11 @@ class ViewerLogin extends Component {
         } else {
             // Post viewer to battle 
             const viewer = await battle.postViewer(name, phoneNumber)
-
             // Set cookie
             cookieService.setCookie(battle.id, viewer._id, "viewer")
             .then(() => {
                 // Redirect to battle page
-                window.location.replace(`/battles/${battle._id}`)
+                window.location.replace(`/battles/${battle.id}`)
             })
         }
     }

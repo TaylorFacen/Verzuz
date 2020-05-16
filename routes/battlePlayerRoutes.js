@@ -7,14 +7,14 @@ const Battle = mongoose.model('battles');
 module.exports = ( app ) => {
     app.get(`/api/battles/:battleId/players`, async (req, res) => {
         const { battleId } = req.params;
-        const userId = req.query;
+        const { userId } = req.query;
 
         if ( userId ) {
             const battle = await Battle.findById(battleId);
             
             if ( battle ) {
                 const players = battle.players;
-                const player = players.find(p => p._id === userId);
+                const player = players.find(p => p.id === userId);
                 return res.status(201).send(player) 
             } else {
                 return res.status(404).send("Battle not Found")

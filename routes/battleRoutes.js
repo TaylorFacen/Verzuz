@@ -84,7 +84,8 @@ module.exports = ( app ) => {
             const currentTurn = battle.players[0]._id;
             const updatedBattle = await Battle.findByIdAndUpdate({ _id: battleId }, {
                 startedOn: Date.now(),
-                currentTurn: currentTurn
+                currentTurn: currentTurn,
+                currentRound: 1
             });
 
             // Send pusher notification

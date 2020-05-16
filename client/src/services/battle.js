@@ -8,24 +8,20 @@ class User {
     }
 
     init = async () => {
-        if ( this.userType === 'player' ) {
-            axios.get(`/api/battles/${this.battleId}/players?userId=${this.id}`)
-            .then(res => {
-                const player = res.data;
-                this.name = player.name;
-                this.email = player.email
-
-            })
-        } else {
-            axios.get(`/api/battles/${this.battleId}/viewers?userId=${this.id}`)
-            .then(res => {
-                const viewer = res.data;
-                this.phoneNumber = viewer.phoneNumber;
-                this.name = viewer.name;
-                this.joinedOn = viewer.joinedOn;
-                this.leftOn = viewer.leftOn;
-                this.votes = viewer.voties
-            })
+        try {
+            const userType = this.userType;
+            const resource = userType === 'player' ? 'players' : 'viewers';
+            const url = `/api/battles/${this.battleId}/${resource}?userId=${this.id}`
+            const response = await axios.get(url);
+            const user = response.data;
+            this.name = user.name;
+            this.phoneNumber = user.phoneNumber;
+            this.email = user.email;
+            this.joinedOn = user.joinedOn;
+            this.leftOn = user.leftOn;
+            this.votes = user.votes;
+        } catch (error) {
+            console.log(error)
         }
     }
 
@@ -85,7 +81,8 @@ class Battle {
     }
 
     postViewer = async (name, phoneNumber ) => {
-        const res = axios.post(`${this.baseUrl}/viewers`, { name, phoneNumber, userType: "viewer" })
+        const res = await axios.post(`${this.baseUrl}/viewers`, { name, phoneNumber, userType: "viewer" });
+        console.log(res.data)
         return res.data
     }
 
@@ -102,7 +99,7 @@ class Battle {
             text: "joined",
             name: viewer.name,
             userId: "system",
-            _id: Math.random().toString(36).substr(2, 10).toUpperCase()
+            _id: viewer._id
         }
         this.viewers = viewers.filter(v => v.phoneNumber !== viewer.phoneNumber).concat([viewer])
         this.addComment(comment)

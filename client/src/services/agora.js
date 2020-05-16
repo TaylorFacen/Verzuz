@@ -14,11 +14,10 @@ class AgoraClient {
         }
     }
 
-    joinChannel = (userType, battleName, contact, updateParticipantsCallback) => {
+    joinChannel = (userType, battleName, userId, updateParticipantsCallback) => {
         this.rtc.client.setClientRole(userType === "player" ? "host" : "audience");
 
-        const uid = userType === 'player' ? contact : contact + String(Date.now())
-
+        const uid = userType === 'player' ? userId : userId + String(Date.now())
         // Initialize the client
         this.rtc.client.init(agoraAppId, () => {
             // Join a channel
