@@ -26,28 +26,23 @@ class User {
         }
     }
 
-    updateVote = async ( round, playerId ) => {
+    set updatedVote(data){
+        const { round, playerId } = data;
         this.votes.filter(vote => vote.round === round).playerId = playerId;
     }
 }
 
 class Battle {
-    constructor(battleId = null){
-        // Allowing the app to create an empty Battle object so that the client can subscribe to pusher before fetching battle data
-        if ( battleId ) {
-            this.setBattle( battleId )
-        }
+    constructor(battleId){
+        this.id = battleId;
+        this.baseUrl = `/api/battles/${battleId}`
     }
 
-    setBattle = async ( battleId ) => {
-        const battleResponse = await axios.get(`/api/battles/${battleId}`);
-        const battle = battleResponse.data;
-
-        if ( battle ) {
+    init = async () => {
+        try {
+            const response = await axios.get(this.baseUrl);
+            const battle = response.data;
             this.isBattle = true
-            this.baseUrl = `/api/battles/${battleId}`;
-
-            this.id = battle._id;
             this.name = battle.name;
             this.startedOn = battle.startedOn;
             this.endedOn = battle.endedOn;
@@ -60,39 +55,20 @@ class Battle {
             this.currentTurn = battle.currentTurn;
             this.previousTurn = battle.previousTurn;
             this.createdOn = battle.createdOn;
-
-            // Merge the battle comments and viewers with any that have been added via pusher
-            const currentViewers = this.viewers || [];
-            this.viewers = this.removeDuplicates(currentViewers.concat(currentViewers), 'phoneNumber')
-            
-            const currentComments = this.comments || [];
-            this.comments = this.removeDuplicates(currentComments.concat(this.comments), '_id')
-        } else {
-            this.isBattle = false
+            this.viewer = battle.viewers;
+            this.comments = battle.comments;
+        } catch (error ) {
+            if ( error?.response?.status === 404 ) {
+                this.isBattle = false
+            } else {
+                console.log(error)
+            }
         }
-    }
-
-    createBattle = async data => {
-        axios.post(`/api/battles`, data)
-        .then(res => {
-            const battle = res.data.battle;
-            this.setBattle(battle._id)
-        })
-    }
-
-    getAllBattles = async () => {
-        const res = await axios.get('/api/battles');
-        return res.data || [];
     }
 
     postComment = async (user, text) => {
         const res = await axios.post(`${this.baseUrl}/comments`, {userId: user.id, name: user.name, text});
         return res.data || {};
-    }
-
-    addComment = async comment => {
-        const comments = this.comments || [];
-        this.comments = comments.filter(c => c._id !== comment._id).concat([comment])
     }
 
     postSubscriber = async (phoneNumber) => {
@@ -111,31 +87,17 @@ class Battle {
         return res.data || {};
     }
 
-    addViewer = async viewer => {
-        const viewers = this.viewers || [];
-        const comment = {
-            createdOn: Date.now(),
-            text: "joined",
-            name: viewer.name,
-            userId: "system",
-            _id: Math.random().toString(36).substr(2, 10).toUpperCase()
-        }
-        this.viewers = viewers.filter(v => v.phoneNumber !== viewer.phoneNumber).concat([viewer])
-        await this.addComment(comment)
-    }
-
     removeViewer = async userId => {
         const viewers = this.viewers || [];
-        this.viewers = viewers.filter(viewer => viewer._id !== userId)
+        const updatedViewers = viewers.filter(viewer => viewer._id !== userId);
+        this.updatedBattleData = { viewers: updatedViewers }
     }
 
     start = async () => {
         axios.post(`${this.baseUrl}/start`)
         .then(res => {
             const currentTurn = res.data;
-            this.startedOn = Date.now();
-            this.currentRound = 1;
-            this.currentTurn = currentTurn;
+            this.updatedBattleData = { startedOn: Date.now(), currentRound: 1, currentTurn}
         })
         .catch(error => console.log(error))
     }
@@ -144,8 +106,7 @@ class Battle {
         axios.post(`${this.baseUrl}/end`)
         .then(res => {
             const votes = res.data;
-            this.endedOn = Date.now();
-            this.votes = votes
+            this.updatedBattleData = { votes, endedOn: Date.now() }
         })
         .catch(error => console.log(error))
     }
@@ -153,11 +114,7 @@ class Battle {
     nextTurn = async () => {
         axios.post(`${this.baseUrl}/next`)
         .then(res => {
-            const { currentRound, currentTurn, previousTurn, votes} = res.data;
-            this.currentRound = currentRound;
-            this.currentTurn = currentTurn;
-            this.previousTurn = previousTurn;
-            this.votes = votes;
+            this.updatedBattleData = res.data;            
         })
         .catch(error => console.log(error))
     }
@@ -166,8 +123,7 @@ class Battle {
         axios.post(`${this.baseUrl}/votes`, { playerId, round, userId: user.id })
         .then(async () => {
             // Update user object with new vote
-            await user.updateVote(round, playerId)
-
+            user.updatedVote = { round, playerId}
             return user
         })
     }
@@ -234,12 +190,31 @@ class Battle {
         }
     }
 
-    // Helper Functions
-    removeDuplicates = ( data, key ) => {
-        const uniqueData = Array.from(new Set(data.map(d => d[key])))
-        .map(value => data.find(d => d[key] === value));
+    // Setters
+    set updatedBattleData(data) {
+        for (let [key, value] of Object.entries(data)) {
+            if (value) {
+                this[key] = value
+            }
+        }
+    }
 
-        return uniqueData;
+    set newComment(comment) {
+        const comments = this.comments || [];
+        this.comments = comments.filter(c => c._id !== comment._id).concat([comment])
+    }
+
+    set newViewer(viewer) {
+        const viewers = this.viewers || [];
+        const comment = {
+            createdOn: Date.now(),
+            text: "joined",
+            name: viewer.name,
+            userId: "system",
+            _id: Math.random().toString(36).substr(2, 10).toUpperCase()
+        }
+        this.viewers = viewers.filter(v => v.phoneNumber !== viewer.phoneNumber).concat([viewer])
+        this.newComment = comment
     }
 }
 

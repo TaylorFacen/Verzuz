@@ -28,10 +28,11 @@ class ViewerLogin extends Component {
         errorMessage: null
     }
 
-    componentDidMount(){
+    async componentDidMount(){
         const battleId = this.props.match.params.battleId.toUpperCase();
         const cookieResp = cookieService.parseCookie(battleId);
         const battle = new Battle(battleId);
+        await battle.init();
 
         if ( !!battle.startedOn && !battle.endedOn && cookieResp.hasAccess ) {
             // User is already authenticated
@@ -219,7 +220,7 @@ class ViewerLogin extends Component {
         return !isLoading && (
             <div className = "ViewerLogin">
                 { !battle.isBattle ? <BattleNotFound /> : null }
-                { !!battle && !battle.startedOn ? (
+                { battle.isBattle && !battle.startedOn ? (
                     <div className = "subscription-screen module">
                         <h3>{ battle.name } hasn't started yet.</h3>
                         { displayPhoneNumberForm ? (

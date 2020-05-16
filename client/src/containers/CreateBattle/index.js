@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 import { Row, Col } from 'react-bootstrap';
 
+import axios from 'axios';
+
 import './CreateBattle.css';
 import BattleDetails from './BattleDetails';
 import Confirmation from './Confirmation';
 import Overview from './Overview';
-
-import { Battle } from '../../services/battle';
 
 class CreateBattle extends Component {
     state = {
@@ -42,13 +42,14 @@ class CreateBattle extends Component {
             ]
         }
 
-        const battle = new Battle();
-        await battle.createBattle(data);
-
-        this.setState({
-            displayBattleDetails: false,
-            displayConfirmationScreen: true,
-            battle
+        axios.post(`/api/battles`, data)
+        .then(res => {
+            const battle = res.data.battle;
+            this.setState({
+                displayBattleDetails: false,
+                displayConfirmationScreen: true,
+                battle
+            })
         })
     }
 

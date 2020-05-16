@@ -20,7 +20,6 @@ import PusherClient from '../../services/pusher';
 
 class BattleRoom extends Component {
     state = {
-        battle: new Battle(),
         user: null,
         isLoading: true
     }
@@ -33,14 +32,14 @@ class BattleRoom extends Component {
             // Viewer subscriptions
             const cookieData = cookieResp.data;
 
-            // Set the user
-            this.setUser(cookieData)
-            .then(user => {
-                // Start pusher subscriptions
-                this.startPusherSubscription(battleId, user.phoneNumber || user.email)
-                .then(() => {
-                    // Get data
-                    this.getData(battleId)
+            // Get data
+            this.setBattle(battleId)
+            .then(() => {
+                // Set the user
+                this.setUser(cookieData)
+                .then(user => {
+                    // Start pusher subscriptions
+                    this.startPusherSubscription(battleId, user.phoneNumber || user.email)
                     .then(() => {
                         this.startMediaSubscription(user.userType, user.email || user.phoneNumber)
                     })
@@ -58,7 +57,8 @@ class BattleRoom extends Component {
 
         this.setState(async prevState => {
             const { battle } = prevState;
-            await battle.addViewer(user)
+            battle.newViewer = user;
+
             return {
                 user,
                 battle
@@ -66,6 +66,11 @@ class BattleRoom extends Component {
         })
 
         return user
+    }
+
+    setBattle( battleId ){
+        const battle = new Battle(battleId);
+        this.setState({ battle, isLoading: false })
     }
 
     async startPusherSubscription(battleId, user){
@@ -76,7 +81,7 @@ class BattleRoom extends Component {
         pusher.subscribeToNewViewerEvent(async viewer => {
             this.setState(async prevState => {
                 const { battle } = prevState;
-                await battle.addViewer(viewer)
+                battle.newViewer = viewer;
                 return { battle }
             })
         })
@@ -110,7 +115,7 @@ class BattleRoom extends Component {
             this.setState(async prevState => {
                 const { battle } = prevState;
 
-                await battle.addComment(comment);
+                battle.newComment = comment;
                 return { battle }
             })
         })
@@ -187,15 +192,6 @@ class BattleRoom extends Component {
         agora.joinChannel(userType, battle.name, uid, updatePlayersCallback)
         this.setState({
             agora
-        })
-    }
-
-    getData( battleId ){
-        this.setState(async prevState => {
-            const { battle } = prevState;
-            await battle.setBattle(battleId);
-
-            return { battle, isLoading: false }
         })
     }
 

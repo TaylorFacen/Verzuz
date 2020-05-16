@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 
+import axios from 'axios';
+
 import './BattleSearch.css';
 import SearchField from './SearchField';
 import SearchResults from './SearchResults';
-
-import { Battle } from '../../../services/battle';
 
 class BattleSearch extends Component {
     state = {
@@ -13,11 +13,11 @@ class BattleSearch extends Component {
     }
 
     componentDidMount(){
-        const battle = new Battle();
-        battle.getAllBattles()
-        .then(battles => {
+        axios.get('/api/battles')
+        .then(res => {
+            const battles = res.data;
             this.setState({ battles })
-        })        
+        })       
     }
 
     filterBattles = (battles, searchInput) => {

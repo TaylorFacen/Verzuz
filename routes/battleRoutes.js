@@ -55,7 +55,7 @@ module.exports = ( app ) => {
 
             battle.save();
 
-            await sendBattleInvites(battle);
+            //await sendBattleInvites(battle);
             return res.status(201).send({
                 error: false,
                 battle
@@ -65,35 +65,9 @@ module.exports = ( app ) => {
 
     app.get(`/api/battles/:battleId`, async (req, res) => {
         const { battleId } = req.params;
-
-        const battleQuery = await Battle.aggregate().match({_id: battleId}).project({
-            _id: 1,
-            name: 1,
-            startedOn: 1,
-            endedOn: 1,
-            players: 1,
-            roundCount: 1,
-            audienceLimit: 1,
-            subscribers: 1,
-            blacklist: 1,
-            viewers: 1,
-            comments: 1,
-            currentRound: 1,
-            currentTurn: 1,
-            previousTurn: 1,
-            createdOn: 1,
-            votes: {
-                _id: 0,
-                round: 1,
-                player: 1,
-                voteCount: {
-                    $size: '$viewers'
-                }
-            }
-        })
+        const battle = await Battle.findById(battleId);
         
-        if ( battleQuery.length > 1 ) {
-            const battle = battleQuery[0];
+        if ( battle ) {
             return res.status(200).send(battle)
         } else {
             return res.status(404).send("Not Found")
