@@ -14,8 +14,10 @@ class BattleSearch extends Component {
 
     componentDidMount(){
         const battle = new Battle();
-        const battles = battle.getAllBattles();
-        this.setState({ battles })
+        battle.getAllBattles()
+        .then(battles => {
+            this.setState({ battles })
+        })        
     }
 
     filterBattles = (battles, searchInput) => {
