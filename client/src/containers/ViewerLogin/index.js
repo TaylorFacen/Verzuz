@@ -239,14 +239,14 @@ class ViewerLogin extends Component {
                         )}
                     </div>
                 ) : null }
-                { !!battle && !!battle.startedOn && !battle.endedOn ? (
+                { battle.isBattle && !!battle.startedOn && !battle.endedOn ? (
                     <div className = "module">
                         <Image src = { Earbuds } alt = "Earbuds" className = "hero" />
                         { battle.startedOn ? this.renderLoginScreens() : this.renderSubscriptionScreens() }
                         <p><a href = "/">Home</a></p>
                     </div>
                 ) : null }
-                { !!battle && !!battle.startedOn && !!battle.endedOn ? (
+                { battle.isBattle && !!battle.startedOn && !!battle.endedOn ? (
                     <BattleEnded battle = { battle } />
                 ) : null }
             </div>

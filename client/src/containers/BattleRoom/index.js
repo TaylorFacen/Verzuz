@@ -20,7 +20,6 @@ import PusherClient from '../../services/pusher';
 
 class BattleRoom extends Component {
     state = {
-        user: null,
         isLoading: true
     }
 
@@ -31,49 +30,35 @@ class BattleRoom extends Component {
         if ( cookieResp.hasAccess ) {
             // Viewer subscriptions
             const cookieData = cookieResp.data;
+            const { userId, userType } = cookieData;
 
-            // Get data
-            this.setBattle(battleId)
-            .then(() => {
-                // Set the user
-                this.setUser(cookieData)
-                .then(user => {
-                    // Start pusher subscriptions
-                    this.startPusherSubscription(battleId, user.phoneNumber || user.email)
-                    .then(() => {
-                        this.startMediaSubscription(user.userType, user.email || user.phoneNumber)
-                    })
-                })
+            // Get battle
+            const battle = new Battle(battleId);
+            await battle.init();
+
+            // Get user
+            const user = new User(battleId, userId, userType)
+            await user.init();
+
+            // Start pusher subscriptions
+            const pusher = this.startPusherSubscription(battleId, user.phoneNumber || user.email);
+
+            // Start Agora subscription
+            const agora = this.startMediaSubscription(battle.name, user.userType, user.email || user.phoneNumber )
+
+            this.setState({
+                battle,
+                user,
+                pusher,
+                agora,
+                isLoading: false
             })
         } else {
             window.location.replace(`/battles/${battleId}/join`)
         }
     }
 
-    async setUser(cookieData) {
-        const { userId, userType, battleId } = cookieData;
-
-        const user = new User(battleId, userId, userType);
-
-        this.setState(async prevState => {
-            const { battle } = prevState;
-            battle.newViewer = user;
-
-            return {
-                user,
-                battle
-            }
-        })
-
-        return user
-    }
-
-    setBattle( battleId ){
-        const battle = new Battle(battleId);
-        this.setState({ battle, isLoading: false })
-    }
-
-    async startPusherSubscription(battleId, user){
+    startPusherSubscription(battleId, user){
         const pusher = new PusherClient();
         pusher.subscribeToChannel(battleId);
 
@@ -81,7 +66,7 @@ class BattleRoom extends Component {
         pusher.subscribeToNewViewerEvent(async viewer => {
             this.setState(async prevState => {
                 const { battle } = prevState;
-                battle.newViewer = viewer;
+                await battle.addViewer(viewer);
                 return { battle }
             })
         })
@@ -115,7 +100,7 @@ class BattleRoom extends Component {
             this.setState(async prevState => {
                 const { battle } = prevState;
 
-                battle.newComment = comment;
+                battle.addComment(comment);
                 return { battle }
             })
         })
@@ -162,14 +147,10 @@ class BattleRoom extends Component {
             })
         })
 
-        this.setState({
-            pusher
-        })
+        return pusher
     }
 
-    async startMediaSubscription(userType, uid){
-        const { battle } = this.state;
-
+    async startMediaSubscription(battleName, userType, uid){
         const updatePlayersCallback = (playerId, isStreaming, isAudioConnected) => {
             this.setState(prevState => {
                 const { battle } = prevState;
@@ -189,10 +170,9 @@ class BattleRoom extends Component {
         }
 
         const agora = new AgoraClient();
-        agora.joinChannel(userType, battle.name, uid, updatePlayersCallback)
-        this.setState({
-            agora
-        })
+        agora.joinChannel(userType, battleName, uid, updatePlayersCallback)
+        
+        return agora
     }
 
     async leaveBattle() {
@@ -269,7 +249,7 @@ class BattleRoom extends Component {
 
     render(){
         const { battle, user, isLoading } = this.state;
-
+        console.log(battle)
         return !isLoading ? (
             <div className = "BattleRoom">
                 <Navigation 
@@ -286,8 +266,7 @@ class BattleRoom extends Component {
                                 const isActive = battle.currentTurn === p._id && ( battle.currentRound <= battle.roundCount );
                                 const isCurrentVote = !!user.votes && user.votes.find(v => v.round === (battle.currentRound > battle.roundCount ? battle.currentRound - 1 : battle.currentRound)).playerId === p._id;
                                 const displayFinishTurnButton = isActive && user.id === p._id && battle.currentRound <= battle.roundCount;
-                                const score = battle.playerScores.filter(s => s.player._id = p._id);
-
+                                const score = battle.playerScores.find(s => s.player._id === p._id)?.score
                                 return (
                                     <Col key = { p.email } >
                                         <VideoPlayer 

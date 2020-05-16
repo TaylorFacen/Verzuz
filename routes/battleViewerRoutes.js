@@ -34,7 +34,9 @@ module.exports = ( app ) => {
             if ( battle ) {
                 const viewers = battle.viewers;
                 const viewer = viewers.find(v => v._id === userId);
-                return res.status(201).send(viewer) 
+                // Add viewer votes
+                const updatedViewer = addUserVotes(battle, viewer);
+                return res.status(201).send(updatedViewer) 
             } else {
                 return res.status(404).send("Battle not Found")
             }

@@ -27,7 +27,7 @@ class PlayerLogin extends Component {
         })
     }
 
-    componentDidMount(){
+    async componentDidMount(){
         const battleId = this.props.match.params.battleId.toUpperCase();
         const cookieResp = cookieService.parseCookie(battleId)
 
@@ -36,6 +36,7 @@ class PlayerLogin extends Component {
             window.location.replace(`/battles/${battleId}`)
         } else {
             const battle = new Battle(battleId);
+            await battle.init();
             this.setState({
                 battle,
                 isLoading: false
@@ -56,7 +57,7 @@ class PlayerLogin extends Component {
             cookieService.setCookie(battle.id, player._id, "player")
             .then(() => {
                 // Redirect to battle page
-                window.location.replace(`/battles/${battle._id}`)
+                window.location.replace(`/battles/${battle.id}`)
             })   
         } else {
             this.setState({
@@ -71,7 +72,7 @@ class PlayerLogin extends Component {
         return !isLoading && (
             <div className = "PlayerLogin">
                 { !battle.isBattle ? <BattleNotFound /> : null }
-                { !!battle && !battle.endedOn ? (
+                { battle.isBattle && !battle.endedOn ? (
                     <div className = "module">
                         <Image src = { Play } alt = "Play" className = "hero" />
                         <h3>You are joining the { battle.name } battle.</h3>
@@ -84,7 +85,7 @@ class PlayerLogin extends Component {
                         <p><a href = "/">Home</a></p>
                     </div>
                 ): null }
-                { !!battle && !!battle.endedOn ? (
+                { battle.isBattle && !!battle.endedOn ? (
                     <BattleEnded battle = { battle } />
                 ) : null }
             </div>

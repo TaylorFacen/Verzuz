@@ -55,7 +55,7 @@ module.exports = ( app ) => {
 
             battle.save();
 
-            //await sendBattleInvites(battle);
+            await sendBattleInvites(battle);
             return res.status(201).send({
                 error: false,
                 battle

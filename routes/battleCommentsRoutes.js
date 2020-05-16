@@ -32,7 +32,7 @@ module.exports = ( app ) => {
 
                 const updatedBattle = await Battle.findByIdAndUpdate(battleId, { $push: { comments: comment } })
                 await pusher.addComment(battleId, comment)
-                return res.status(201).send("OK")
+                return res.status(201).send(comment)
                 
             } else {
                 return res.status(404).send("Not Found")

@@ -4,9 +4,12 @@ class User {
     constructor(battleId, userId, userType){
         this.id = userId;
         this.userType = userType;
+        this.battleId = battleId
+    }
 
-        if ( userType === 'player' ) {
-            axios.get(`/api/battles/${battleId}/players?userId=${userId}`)
+    init = async () => {
+        if ( this.userType === 'player' ) {
+            axios.get(`/api/battles/${this.battleId}/players?userId=${this.id}`)
             .then(res => {
                 const player = res.data;
                 this.name = player.name;
@@ -14,7 +17,7 @@ class User {
 
             })
         } else {
-            axios.get(`/api/battles/${battleId}/viewers?userId=${userId}`)
+            axios.get(`/api/battles/${this.battleId}/viewers?userId=${this.id}`)
             .then(res => {
                 const viewer = res.data;
                 this.phoneNumber = viewer.phoneNumber;
@@ -26,8 +29,7 @@ class User {
         }
     }
 
-    set updatedVote(data){
-        const { round, playerId } = data;
+    addVote = async ( round, playerId ) => {
         this.votes.filter(vote => vote.round === round).playerId = playerId;
     }
 }
@@ -55,8 +57,9 @@ class Battle {
             this.currentTurn = battle.currentTurn;
             this.previousTurn = battle.previousTurn;
             this.createdOn = battle.createdOn;
-            this.viewer = battle.viewers;
+            this.viewers = battle.viewers;
             this.comments = battle.comments;
+            this.votes = battle.votes;
         } catch (error ) {
             if ( error?.response?.status === 404 ) {
                 this.isBattle = false
@@ -69,6 +72,11 @@ class Battle {
     postComment = async (user, text) => {
         const res = await axios.post(`${this.baseUrl}/comments`, {userId: user.id, name: user.name, text});
         return res.data || {};
+    }
+
+    addComment = async (comment) => {
+        const comments = this.comments || [];
+        this.comments = comments.filter(c => c._id !== comment._id).concat([comment])
     }
 
     postSubscriber = async (phoneNumber) => {
@@ -87,17 +95,31 @@ class Battle {
         return res.data || {};
     }
 
+    addViewer = async (viewer) => {
+        const viewers = this.viewers || [];
+        const comment = {
+            createdOn: Date.now(),
+            text: "joined",
+            name: viewer.name,
+            userId: "system",
+            _id: Math.random().toString(36).substr(2, 10).toUpperCase()
+        }
+        this.viewers = viewers.filter(v => v.phoneNumber !== viewer.phoneNumber).concat([viewer])
+        this.addComment(comment)
+    }
+
     removeViewer = async userId => {
         const viewers = this.viewers || [];
-        const updatedViewers = viewers.filter(viewer => viewer._id !== userId);
-        this.updatedBattleData = { viewers: updatedViewers }
+        this.viewers = viewers.filter(viewer => viewer._id !== userId);
     }
 
     start = async () => {
         axios.post(`${this.baseUrl}/start`)
         .then(res => {
             const currentTurn = res.data;
-            this.updatedBattleData = { startedOn: Date.now(), currentRound: 1, currentTurn}
+            this.startedOn = Date.now();
+            this.currentRound = 1;
+            this.currentTurn = currentTurn;
         })
         .catch(error => console.log(error))
     }
@@ -106,7 +128,8 @@ class Battle {
         axios.post(`${this.baseUrl}/end`)
         .then(res => {
             const votes = res.data;
-            this.updatedBattleData = { votes, endedOn: Date.now() }
+            this.votes = votes;
+            this.endedOn = Date.now();
         })
         .catch(error => console.log(error))
     }
@@ -114,7 +137,11 @@ class Battle {
     nextTurn = async () => {
         axios.post(`${this.baseUrl}/next`)
         .then(res => {
-            this.updatedBattleData = res.data;            
+            const { currentRound, currentTurn, previousTurn, votes } = res.data;
+            this.currentRound = currentRound;
+            this.currentTurn = currentTurn;
+            this.previousTurn = previousTurn;
+            this.votes = votes;
         })
         .catch(error => console.log(error))
     }
@@ -123,7 +150,7 @@ class Battle {
         axios.post(`${this.baseUrl}/votes`, { playerId, round, userId: user.id })
         .then(async () => {
             // Update user object with new vote
-            user.updatedVote = { round, playerId}
+            await user.addVote(round, playerId);
             return user
         })
     }
@@ -188,33 +215,6 @@ class Battle {
         } else {
             return rankedPlayerScores[0]
         }
-    }
-
-    // Setters
-    set updatedBattleData(data) {
-        for (let [key, value] of Object.entries(data)) {
-            if (value) {
-                this[key] = value
-            }
-        }
-    }
-
-    set newComment(comment) {
-        const comments = this.comments || [];
-        this.comments = comments.filter(c => c._id !== comment._id).concat([comment])
-    }
-
-    set newViewer(viewer) {
-        const viewers = this.viewers || [];
-        const comment = {
-            createdOn: Date.now(),
-            text: "joined",
-            name: viewer.name,
-            userId: "system",
-            _id: Math.random().toString(36).substr(2, 10).toUpperCase()
-        }
-        this.viewers = viewers.filter(v => v.phoneNumber !== viewer.phoneNumber).concat([viewer])
-        this.newComment = comment
     }
 }
 
