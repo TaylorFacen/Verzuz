@@ -28,14 +28,13 @@ export default {
     removeCookie: async () => {
         document.cookie = "verzuz=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
     },
-    setCookie: async (battleId, userType, name, phoneNumber, email) => {
+
+    setCookie: async (battleId, userId, userType) => {
         const expirationDate = new Date(Date.now() + 86400e3).toUTCString();
         const cookieData = JSON.stringify({
             userType,
-            name,
-            battleId,
-            phoneNumber,
-            email
+            userId,
+            battleId
         });
         const uriEncodedCookieData = encodeURI(cookieData);
         document.cookie = `verzuz=${uriEncodedCookieData}; expires=${expirationDate}; path=/;`;

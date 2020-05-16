@@ -3,40 +3,25 @@ import React from 'react';
 import { Image } from 'react-bootstrap';
 
 import './BattleEnded.css';
-import battleService from '../../services/battleService';
 
 const Cassette = require('../../images/audio cassette.png');
 
 export default ({ battle }) => {
     const roundCount = battle.currentRound < battle.roundCount ? battle.currentRound : battle.roundCount;
-    const winnerByRound = battleService.calculateWinnerByRound(battle.scores);
-    if ( winnerByRound ) {
-        const players = Array.from(new Set(winnerByRound.map(score => score.winner)))
-        const playerFinalScores = players.map(player => ({
-            player: player,
-            score: winnerByRound.filter(score => score.winner === player).length
-        // Remove any rounds where no one received any votes
-        })).filter(score => score.player)
-        const winner = playerFinalScores.reduce((winner, curr) => {
-            if ( curr.score > winner.score ) {
-                return curr
-            } else {
-                return winner
-            }
-        }, playerFinalScores[0]);
+    const winnersByRound = battle.winnersByRound;
 
-        const playerName = battle.participants.find(p => p.email === winner.player)?.name;
+    if ( winnersByRound.filter(round => round.winners.length > 0).length > 0 ) {
+        const winner = battle.winner;
 
         return (
             <div className = "BattleEnded module">
                 <Image className = "hero" src = { Cassette } alt = "Audio cassette icon"/>
                 <h3>{ battle.name } is over.</h3>
-                <p>After { roundCount } rounds, { playerFinalScores[0]?.score === playerFinalScores[1]?.score ? <span>the battle ended in a tie. </span> : <span>{ playerName } won with { winner.score } points. </span> } </p>
-                { winnerByRound.map(round => {
-                    const playerName = battle.participants.find(p => p.email === round.winner)?.name;
+                <p>After { roundCount } rounds, { winner === "tie" ? <span>the battle ended in a tie. </span> : <span> { winner.player.name } won with { winner.score } points. </span> } </p>
+                { winnersByRound.map(round => {
                     return (
                         <div key = { round.round }>
-                            Round { round.round }: { playerName ? playerName : "No One" }
+                            Round { round.round }: { round.winners.length === 1 ? round.winners[0].name : "Tie" }
                         </div>
                     )
                 })}

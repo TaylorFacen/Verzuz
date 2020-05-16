@@ -1,7 +1,5 @@
 import Pusher from 'pusher-js';
 
-import battleService from './battleService';
-
 class PusherClient {
     constructor() {
         this.pusher = new Pusher(process.env.REACT_APP_PUSHER_APP_KEY, {
@@ -24,19 +22,7 @@ class PusherClient {
     subscribeToNewViewerEvent = callback => {
         this.channel.bind('new-viewer', data => {
             const { viewer } = data;
-            const comment = {
-                createdOn: Date.now(),
-                text: "joined",
-                name: viewer.name,
-                userId: "system",
-                _id: Math.random().toString(36).substr(2, 10).toUpperCase()
-            }
-
-            const newViewer = {
-                ...viewer,
-                leftOn: null
-            }
-            callback(comment, newViewer)
+            callback(viewer)
         })
     }
 
@@ -63,15 +49,17 @@ class PusherClient {
     }
 
     subscribeToBattleEndedEvent = callback => {
-        this.channel.bind('end-battle', data => callback(data))
+        this.channel.bind('end-battle', data => {
+            const { votes } = data;
+            callback(votes)
+        })
     }
 
     subscribeToNextTurnEvent = callback => {
         this.channel.bind('next-turn', async data => {
-            const { currentRound, currentTurn, previousTurn, scores } = data;
-            const winnerByRound = await battleService.calculateWinnerByRound(scores);
+            const { currentRound, currentTurn, previousTurn, votes } = data;
 
-            callback(currentRound, currentTurn, previousTurn, winnerByRound)
+            callback(currentRound, currentTurn, previousTurn, votes)
         })
     }
 }

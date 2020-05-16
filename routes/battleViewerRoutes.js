@@ -3,50 +3,21 @@ const mongoose = require('mongoose');
 const Battle = mongoose.model('battles');
 
 // Helper Functions //
-const isViewerInBattle = async (battleId, phoneNumber) => {
-    const battle = await Battle.findById(battleId);
-    const viewers = battle.viewers;
 
-    return viewers.filter(v => v.phoneNumber === phoneNumber).length > 0;
-}
-
-const addViewer = async (battleId, viewer) => {
-    // Add viewer record
-    const battle = await Battle.findByIdAndUpdate(battleId, { $push: { viewers: viewer } })
-
-    // Trigger pusher event
-    const resp = pusher.addViewer(battleId, viewer)
+const addUserVotes = async ( battle, viewer) => {
+    const rounds = Array.from(new Set(battle.votes.map(v => v.round)));
+    const votes = rounds.map(round => {
+        const userVote = battle.votes.find(v => v.round === round && v.viewers.includes(viewer._id));
+        if ( userVote ) {
+            return { round: round, playerId: userVote.player}
+        } else {
+            return { round: round, playerId: null }
+        }
+    })
 
     return {
-        battle,
-        resp
-    }
-}
-
-const handleExistingViewer = async (battleId, phoneNumber, name) => {
-    // Get viewer record
-    const battle = await Battle.findById(battleId);
-    const viewers = battle.viewers;
-    const viewer = viewers.filter(v => v.phoneNumber === phoneNumber)[0];
-
-    if (!!viewer.leftOn) {
-        // Viewer once left in the past
-        const updatedBattle = await Battle.updateOne(
-            { "_id": battleId, "viewers.phoneNumber": phoneNumber },
-            { "$set": {"viewers.$.name": name, "viewers.$.leftOn": null}}
-        );
-
-        const resp = await pusher.addViewer(battleId, viewer);
-        return {viewer}
-    } else {
-        const updatedBattle = await Battle.updateOne(
-            { "_id": battleId, "viewers.phoneNumber": phoneNumber },
-            { "$set": {"viewers.$.name": name}}
-        );
-
-        // Will add back in the future
-        // const resp = await pusher.bootViewer(battleId, phoneNumber, 'new session');
-        return viewer
+        ...viewer,
+        votes
     }
 }
 
@@ -55,29 +26,23 @@ const handleExistingViewer = async (battleId, phoneNumber, name) => {
 module.exports = ( app ) => {
     app.get(`/api/battles/:battleId/viewers`, async (req, res) => {
         const { battleId } = req.params;
-        const { active } = req.query;
-        const battle = await Battle.findById(battleId);
+        const userId = req.query;
 
-        if ( battle ) {
-            // Don't include each viewers votes to save on memory
-            const viewers = battle.viewers.map(v => ({
-                phoneNumber: v.phoneNumber,
-                name: v.name,
-                userType: v.userType,
-                joinedOn: v.joinedOn,
-                leftOn: v.leftOn
-            }));
-            if ( active === 'true' ) {
-                const activeViewers = viewers.filter(v => !v.leftOn )
-                return res.status(201).send({viewers: activeViewers})
+        if ( userId ) {
+            const battle = await Battle.findById(battleId);
+            
+            if ( battle ) {
+                const viewers = battle.viewers;
+                const viewer = viewers.find(v => v._id === userId);
+                return res.status(201).send(viewer) 
             } else {
-                return res.status(201).send({viewers: viewers})
+                return res.status(404).send("Battle not Found")
             }
         } else {
-            return res.status(404).send("Not Found")
+            res.status(400).send("userId required")
         }
     })
-
+    
     app.post(`/api/battles/:battleId/viewers`, async (req, res) => {
         const { battleId } = req.params;
         const { phoneNumber, name, userType } = req.body;
@@ -86,22 +51,54 @@ module.exports = ( app ) => {
             const battle = await Battle.findById(battleId);
 
             if ( battle ) {
-                const viewerInBattle = await isViewerInBattle(battleId, phoneNumber);
+                const viewer = battle.viewers.find(viewer => viewer.phoneNumber === phoneNumber);
 
-                if ( viewerInBattle ) {
-                    const viewer = await handleExistingViewer(battleId, phoneNumber, name);
-                    return res.status(201).send(viewer)
+                if ( viewer ) {
+                    if ( !!viewer.lefton ) {
+                        // Viewer once left in the past
+                        await Battle.updateOne(
+                            { "_id": battleId, "viewers.phoneNumber": phoneNumber },
+                            { "$set": {"viewers.$.name": name, "viewers.$.leftOn": null}}
+                        );
+
+                        await pusher.addViewer(battleId, viewer);
+                    } else {
+                        await Battle.updateOne(
+                            { "_id": battleId, "viewers.phoneNumber": phoneNumber },
+                            { "$set": {"viewers.$.name": name}}
+                        );
+                
+                        // Will add back in the future
+                        // await pusher.bootViewer(battleId, phoneNumber, 'new session');
+                    }
+
+                    // Add viewer votes
+                    const updatedViewer = addUserVotes(battle, viewer);
+                    
+
+                    return res.status(201).send(updatedViewer) 
+
                 } else {
-                    const viewer = {
+                    const newViewer = {
                         phoneNumber,
                         name,
                         userType,
                         joinedOn: Date.now(),
-                        leftOn: null,
-                        votes: Array(battle.roundCount).fill().map((_, idx) => idx + 1).map(num => ({round: num, player: null}))
+                        leftOn: null
                     }
-                    addViewer(battleId, viewer)
-                    return res.status(201).send(viewer)
+                    // Add viewer to battle
+                    Battle.findByIdAndUpdate(battleId, { $push: { viewers: newViewer } })
+                    .then(async battle => {
+                        const viewer = battle.viewers.find(viewer => viewer.phoneNumber === phoneNumber);
+
+                        // Trigger pusher event
+                        await pusher.addViewer(battleId, viewer)
+
+                        // Add viewer votes
+                        const updatedViewer = addUserVotes(battle, viewer);
+
+                        return res.status(201).send(updatedViewer)
+                    })
                 }
             } else {
                 return res.status(404).send("Not Found")
@@ -113,23 +110,23 @@ module.exports = ( app ) => {
 
     app.delete(`/api/battles/:battleId/viewers`, async (req, res) => {
         const { battleId } = req.params;
-        const { phoneNumber, reason } = req.query;
+        const { userId, reason } = req.query;
 
         if ( phoneNumber && reason ) {
             const battle = await Battle.findById(battleId);
             
             if ( battle ) {
                 const updatedBattle = await Battle.updateOne(
-                    { "_id": battleId, "viewers.phoneNumber": phoneNumber },
+                    { "_id": battleId, "viewers._id": userId },
                     { "$set": {"viewers.$.leftOn": Date.now()}}
                 );
-                await pusher.bootViewer(battleId, phoneNumber, reason)
+                await pusher.bootViewer(battleId, userId, reason)
                 return res.status(201).send("OK");
             } else {
                 return res.status(404).send("Not Found")
             }
         } else {
-            return res.status(400).send("phoneNumber and reason required")
+            return res.status(400).send("userId and reason required")
         }
     })
 }

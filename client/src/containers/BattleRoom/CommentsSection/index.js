@@ -4,8 +4,6 @@ import './Comments.css';
 import Comments from './Comments';
 import NewCommentForm from './NewCommentForm';
 
-import battleService from '../../../services/battleService';
-
 class CommentsSection extends Component {
     state = {
         newComment: ''
@@ -35,23 +33,23 @@ class CommentsSection extends Component {
 
     postComment = e => {
         e.preventDefault();
-        const { battleId, name, userId } = this.props
+        const { battle, user } = this.props;
         const { newComment } = this.state;
-        battleService.postComment(battleId, userId, name, newComment)
+        battle.postComment(user, newComment)
         .then(() => this.setState({ newComment: ''}))
         .catch(error =>console.log(error))
     }
 
     render() {
-        const { comments, name } = this.props;
+        const { battle, user } = this.props;
         const { newComment } = this.state;
-        const sortedComments = comments.sort((c1, c2) => c1.createdOn >= c2.createdOn ? 1 : -1 )
+        const sortedComments = battle.comments.sort((c1, c2) => c1.createdOn >= c2.createdOn ? 1 : -1 )
         // Make sure to sort comments by timestamp
         return (
             <div className = "CommentsSection module">
                 <Comments comments = { sortedComments } />
                 <NewCommentForm 
-                    name = { name }
+                    name = { user.name }
                     newComment = { newComment }
                     onChange = { this.onChange.bind(this) }
                     postComment = { this.postComment.bind(this) }

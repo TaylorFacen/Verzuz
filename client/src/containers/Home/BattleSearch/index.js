@@ -4,7 +4,7 @@ import './BattleSearch.css';
 import SearchField from './SearchField';
 import SearchResults from './SearchResults';
 
-import battleService from '../../../services/battleService';
+import { Battle } from '../../../services/battle';
 
 class BattleSearch extends Component {
     state = {
@@ -13,13 +13,9 @@ class BattleSearch extends Component {
     }
 
     componentDidMount(){
-        // Get all battles
-        battleService.getAllBattles()
-        .then(battles => {
-            this.setState({
-                battles
-            })
-        })
+        const battle = new Battle();
+        const battles = battle.getAllBattles();
+        this.setState({ battles })
     }
 
     filterBattles = (battles, searchInput) => {

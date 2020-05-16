@@ -9,10 +9,10 @@ const pusher =  new Pusher({
 });
 
 module.exports = {
-    bootViewer: async (battleId, phoneNumber, reason) => {
+    bootViewer: async (battleId, userId, reason) => {
         pusher.trigger(battleId, 'boot-viewer', {
-            phoneNumber: phoneNumber,
-            reason: reason
+            userId,
+            reason
         });
     },
     addViewer: async (battleId, viewer) => {
@@ -25,9 +25,10 @@ module.exports = {
             comment: comment
         })
     },
-    endBattle: async battleId => {
+    endBattle: async ( battleId, votes ) => {
         pusher.trigger(battleId, 'end-battle', {
-            battleId
+            battleId,
+            votes
         })
     },
     startBattle: async (battleId, currentTurn) => {

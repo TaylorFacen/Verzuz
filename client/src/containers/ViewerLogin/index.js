@@ -8,7 +8,7 @@ import DisplayNameForm from './DisplayNameForm';
 import BattleEnded from '../BattleEnded';
 import BattleNotFound from '../BattleNotFound';
 
-import battleService from '../../services/battleService';
+import { Battle } from '../../services/battle';
 import cookieService from '../../services/cookieService';
 
 const Earbuds = require('../../images/earbuds.png')
@@ -30,25 +30,18 @@ class ViewerLogin extends Component {
 
     componentDidMount(){
         const battleId = this.props.match.params.battleId.toUpperCase();
-        const cookieResp = cookieService.parseCookie(battleId)
-        battleService.getBattle(battleId)
-        .then(battle => {
-            if ( !!battle.startedOn && !battle.endedOn && cookieResp.hasAccess ) {
-                // User is already authenticated
-                window.location.replace(`/battles/${battleId}`)
-            } else {
-                this.setState({
-                    isLoading: false,
-                    battle
-                })
-            }
-        })
-        .catch(error => {
-            // Battle not found
+        const cookieResp = cookieService.parseCookie(battleId);
+        const battle = new Battle(battleId);
+
+        if ( !!battle.startedOn && !battle.endedOn && cookieResp.hasAccess ) {
+            // User is already authenticated
+            window.location.replace(`/battles/${battleId}`)
+        } else {
             this.setState({
-                isLoading: false
+                isLoading: false,
+                battle
             })
-        })
+        }
     }
 
     onChange = e => {
@@ -64,71 +57,60 @@ class ViewerLogin extends Component {
         })
     }
 
-    canEnterBattle(battle, phoneNumber){
-        return new Promise((resolve, reject) => {
-            // Check to see if battle is full
-            if ( battle.audienceLimit === battle.viewers ) {
-                // If user is in battle from another client, allow the user in
-                battleService.getViewers(battle._id)
-                .then(resp => {
-                    const { viewers } = resp;
+    canEnterBattle = async ( battle, phoneNumber ) => {
+        if ( battle.audienceLimit === battle.viewers.filter(viewer => !viewer.leftOn ).length ) {
+            // If user is in battle from another client, allow the user in
+            if ( battle.viewers.filter(viewer => viewer.phoenNumber === phoneNumber ).length > 0 ) {
+                return true 
+            } else {
+                this.setState({
+                    displayPhoneNumberForm: false,
+                    displayVerificationCodeForm: false,
+                    displayNameForm: false,
+                    isFull: true
+                })
 
-                    if ( viewers.filter(v => v.phoneNumber === phoneNumber).length === 0) {
-                        this.setState({
-                            displayPhoneNumberForm: false,
-                            displayVerificationCodeForm: false,
-                            displayNameForm: false,
-                            isFull: true
-                        })
-                        resolve(false)
-                    } else {
-                        resolve(true)
-                    }
-                })
-                .catch(error => {
-                    console.log(error);
-                    reject('error')
-                })
+                return false
+            }
+        } else {
             // Check to see if user is on blacklist
-            } else if ( battle.blacklist.includes(phoneNumber) ) {
+            if ( battle.blacklist.map(v => v.phoneNumber).includes(phoneNumber) ) {
                 this.setState({
                     displayPhoneNumberForm: false,
                     displayVerificationCodeForm: false,
                     displayNameForm: false,
                     isBlocked: true
                 })
-                resolve(false)
+
+                return false
             } else {
-                resolve(true)
+                return true
             }
-        })
+        }
     }
 
-    onSubmitPhoneNumber = e => {
+    onSubmitPhoneNumber = async e => {
         e.preventDefault();
         const { battle, phoneNumber } = this.state;
         // Check to see if user can eneter
-        this.canEnterBattle(battle, phoneNumber)
-        .then(canEnter => {
-            if ( canEnter ) {
-                // Todo: Send out verification via Twilio Verify
-                battleService.getVerificationCode(phoneNumber)
-                .then(resp => {
-                    this.setState({
-                        displayPhoneNumberForm: false,
-                        displayVerificationCodeForm: true,
-                        displayNameForm: false
-                    })
+        const canEnter = await this.canEnterBattle( battle, phoneNumber );
+        if ( canEnter ) {
+            battle.getVerificationCode(phoneNumber)
+            .then(() => {
+                this.setState({
+                    displayPhoneNumberForm: false,
+                    displayVerificationCodeForm: true,
+                    displayNameForm: false
                 })
-            }
-        })
+            })
+        }
     }
 
     onSubmitVerificationCode = e => {
         e.preventDefault();
-        const { verificationCode, phoneNumber } = this.state;
-        // Todo: Check to see if code is correct via Twilio Verify
-        battleService.checkVerificationCode(phoneNumber, verificationCode)
+        const { battle, verificationCode, phoneNumber } = this.state;
+
+        battle.checkVerificationCode(phoneNumber, verificationCode)
         .then(status => {
             if (status === 'approved') {
                 this.setState({
@@ -143,50 +125,29 @@ class ViewerLogin extends Component {
                 })
             }
         })
-
-        
     }
 
-    setCookie(battleId, userType, name, phoneNumber) {
-        return new Promise((resolve, reject) => {
-            let expirationDate = new Date(Date.now() + 86400e3).toUTCString();
-            const cookieData = JSON.stringify({
-                userType: userType,
-                name: name,
-                battleId: battleId,
-                phoneNumber: phoneNumber
-            })
-            const uriEncodedCookieData = encodeURI(cookieData)
-            document.cookie = `verzuz=${uriEncodedCookieData}; expires=${expirationDate}; path=/;`;
-        
-            resolve(true)
-        })
-    }
-
-    onSubmitDisplayName = e => {
+    onSubmitDisplayName = async e => {
         e.preventDefault();
         const { battle, phoneNumber, name } = this.state;
 
         // Check to see if user in chat already has display name
-        battleService.getViewers(battle._id)
-        .then(resp => {
-            const { viewers } = resp;
+        const activeViewersWithName = battle.viewers.filter(viewer => viewer.name === name && !viewer.leftOn && viewer.phoneNumber !== phoneNumber);
+        if ( activeViewersWithName.length > 0 ) {
+            this.setState({
+                errorMessage: "That name is already taken."
+            })
+        } else {
+            // Post viewer to battle 
+            const viewer = await battle.postViewer(name, phoneNumber)
 
-            const viewerWithName = viewers.filter(viewer => viewer.name === name)
-
-            if ( viewerWithName.length > 0 && viewerWithName[0].phoneNumber !== phoneNumber ) {
-                this.setState({
-                    errorMessage: "That name is already taken."
-                })
-            } else {
-                // Set cookie
-                cookieService.setCookie(battle._id, "viewer", name, phoneNumber, null)
-                .then(() => {
-                    // Redirect to battle page
-                    window.location.replace(`/battles/${battle._id}`)
-                })
-            }
-        })
+            // Set cookie
+            cookieService.setCookie(battle.id, viewer._id, "viewer")
+            .then(() => {
+                // Redirect to battle page
+                window.location.replace(`/battles/${battle._id}`)
+            })
+        }
     }
 
     onCreateSubscription = e => {
@@ -194,7 +155,7 @@ class ViewerLogin extends Component {
 
         const { battle, phoneNumber } = this.state;
 
-        battleService.addSubscriber(battle._id, phoneNumber )
+        battle.postSubscriber(phoneNumber )
         .then(() => {
             this.setState({
                 displayPhoneNumberForm: false
@@ -257,9 +218,7 @@ class ViewerLogin extends Component {
 
         return !isLoading && (
             <div className = "ViewerLogin">
-
-
-                { !battle ? <BattleNotFound /> : null }
+                { !battle.isBattle ? <BattleNotFound /> : null }
                 { !!battle && !battle.startedOn ? (
                     <div className = "subscription-screen module">
                         <h3>{ battle.name } hasn't started yet.</h3>

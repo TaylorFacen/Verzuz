@@ -1,7 +1,7 @@
 import React from 'react';
 import { Form, Button, Col } from 'react-bootstrap';
 
-export default ({ onSubmit, onChange, battleName, roundCount, audienceLimit, participant1Email, participant1Name, participant2Name, participant2Email, isValid }) => (
+export default ({ onSubmit, onChange, battleName, roundCount, audienceLimit, player1Email, player1Name, player2Name, player2Email, isValid }) => (
     <div className = "BattleDetails">
         <h2>Battle Details</h2>
         <Form onSubmit = { onSubmit }>
@@ -54,42 +54,42 @@ export default ({ onSubmit, onChange, battleName, roundCount, audienceLimit, par
             <Form.Row>
                 <Col lg = { 6 } md = { 12 } sm = { 12 }>
                     <p>1st Participant</p>
-                    <Form.Group controlId="participant1Name">
+                    <Form.Group controlId="player1Name">
                         <Form.Label>Name</Form.Label>
                         <Form.Control 
                             type = "text"
-                            value = { participant1Name }
-                            name = "participant1Name"
+                            value = { player1Name }
+                            name = "player1Name"
                             onChange = { onChange }
                         />
                     </Form.Group>
-                    <Form.Group controlId="participant1Email">
+                    <Form.Group controlId="player1Email">
                         <Form.Label>Email</Form.Label>
                         <Form.Control 
                             type = "email"
-                            value = { participant1Email }
-                            name = "participant1Email"
+                            value = { player1Email }
+                            name = "player1Email"
                             onChange = { onChange }
                         />
                     </Form.Group>
                 </Col>
                 <Col lg = { 6 } md = { 12 } sm = { 12 }>
                     <p>2nd Participant</p>
-                    <Form.Group controlId="participant2Name">
+                    <Form.Group controlId="player2Name">
                         <Form.Label>Name</Form.Label>
                         <Form.Control 
                             type = "text"
-                            value = { participant2Name }
-                            name = "participant2Name"
+                            value = { player2Name }
+                            name = "player2Name"
                             onChange = { onChange }
                         />
                     </Form.Group>
-                    <Form.Group controlId="participant2Email">
+                    <Form.Group controlId="player2Email">
                         <Form.Label>Email</Form.Label>
                         <Form.Control 
                             type = "email"
-                            value = { participant2Email }
-                            name = "participant2Email"
+                            value = { player2Email }
+                            name = "player2Email"
                             onChange = { onChange }
                         />
                     </Form.Group>

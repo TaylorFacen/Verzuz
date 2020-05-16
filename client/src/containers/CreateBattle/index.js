@@ -6,7 +6,7 @@ import BattleDetails from './BattleDetails';
 import Confirmation from './Confirmation';
 import Overview from './Overview';
 
-import battleService from '../../services/battleService';
+import { Battle } from '../../services/battle';
 
 class CreateBattle extends Component {
     state = {
@@ -15,50 +15,47 @@ class CreateBattle extends Component {
         displayConfirmationScreen: false,
         battleName: '',
         roundCount: 5,
-        participant1Name: '',
-        participant1Email: '',
-        participant2Name: '',
-        participant2Email: '',
+        player1Name: '',
+        player1Email: '',
+        player2Name: '',
+        player2Email: '',
         battle: null
     }
 
-    submitBattleDetails = e => {
-        const { audienceLimit,  battleName, roundCount, participant1Name, participant1Email, participant2Name, participant2Email } = this.state;
+    submitBattleDetails = async e => {
+        const { audienceLimit,  battleName, roundCount, player1Name, player1Email, player2Name, player2Email } = this.state;
         e.preventDefault();
 
         const data = {
             name: battleName,
             roundCount: roundCount,
             audienceLimit: audienceLimit,
-            participants: [
+            players: [
                 {
-                    name: participant1Name,
-                    email: participant1Email,
-                    accessCode: Math.random().toString(36).substr(2, 6).toUpperCase()
+                    name: player1Name,
+                    email: player1Email                
                 },
                 {
-                    name: participant2Name,
-                    email: participant2Email,
-                    accessCode: Math.random().toString(36).substr(2, 6).toUpperCase()
+                    name: player2Name,
+                    email: player2Email
                 }
             ]
         }
 
-        battleService.createBattle(data)
-        .then(response => {
-            this.setState({
-                displayBattleDetails: false,
-                displayConfirmationScreen: true,
-                battle: response.battle
-            })
+        const battle = new Battle();
+        await battle.createBattle(data);
+
+        this.setState({
+            displayBattleDetails: false,
+            displayConfirmationScreen: true,
+            battle
         })
-        .catch(error => console.log(error))
     }
 
     validateBattleDetails = () => {
-        const { battleName, participant1Name, participant1Email, participant2Name, participant2Email } = this.state;
+        const { battleName, player1Name, player1Email, player2Name, player2Email } = this.state;
 
-        return battleName.length > 0 && participant1Name.length > 0 && participant1Email.length > 0 && participant2Name.length > 0 && participant2Email.length
+        return battleName.length > 0 && player1Name.length > 0 && player1Email.length > 0 && player2Name.length > 0 && player2Email.length
     }
 
     onChange = e => {
@@ -70,7 +67,7 @@ class CreateBattle extends Component {
 
     render(){
         const { displayBattleDetails, displayConfirmationScreen } = this.state;
-        const { battleName, roundCount, audienceLimit, participant1Name, participant1Email, participant2Name, participant2Email, battle } = this.state;
+        const { battleName, roundCount, audienceLimit, player1Name, player1Email, player2Name, player2Email, battle } = this.state;
         return (
             <div className = "CreateBattle">
                 <Row>
@@ -83,18 +80,18 @@ class CreateBattle extends Component {
                                 battleName = { battleName }
                                 roundCount = { roundCount }
                                 audienceLimit = { audienceLimit }
-                                participant1Email = { participant1Email }
-                                participant1Name = { participant1Name }
-                                participant2Email = { participant2Email }
-                                participant2Name = { participant2Name }
+                                player1Email = { player1Email }
+                                player1Name = { player1Name }
+                                player2Email = { player2Email }
+                                player2Name = { player2Name }
                                 isValid = { this.validateBattleDetails() }
                             /> 
                         ): null }
                         { displayConfirmationScreen ? (
                             <Confirmation 
                                 battleName = { battleName }
-                                participant1Name = { participant1Name }
-                                participant2Name = { participant2Name } 
+                                player1Name = { player1Name }
+                                player2Name = { player2Name } 
                                 battleId = { battle?._id }
                                 roundCount = { roundCount }
                                 audienceLimit = { audienceLimit }
