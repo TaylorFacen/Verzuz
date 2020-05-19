@@ -7,9 +7,9 @@ const Battle = mongoose.model('battles');
 const addUserVotes = ( battle, viewer) => {
     const rounds = Array.from(new Set(battle.votes.map(v => v.round)));
     const votes = rounds.map(round => {
-        const userVote = battle.votes.find(v => v.round === round && v.viewers.includes(viewer.id));
+        const userVote = battle.votes.find(v => v.round === round && v.viewers.includes(mongoose.Types.ObjectId(viewer._id)));
         if ( userVote ) {
-            return { round: round, playerId: userVote.player}
+            return { round: round, playerId: userVote.playerId.toString()}
         } else {
             return { round: round, playerId: null }
         }

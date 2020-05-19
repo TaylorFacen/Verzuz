@@ -177,19 +177,19 @@ module.exports = ( app ) => {
         const battle = await Battle.findById(battleId);
 
         if ( battle ) {
-            const players = battle.players;
-
-            const updatePromises = players.map(player => {
-                if ( player._id === playerId ) {
-                    return Battle.updateOne(
-                        { "_id": battleId, "votes.round": round, "votes.player": playerId },
-                        { "$addToSet": {"votes.$.viewers": userId }}
-                    );
+            const roundVotes = battle.votes.filter(v => v.round === round);
+ 
+            const updatePromises = roundVotes.map(rv => {
+                if ( rv.playerId.toString() === playerId ) {
+                    return Battle.findOneAndUpdate(
+                        { "_id": battleId, "votes._id": rv._id },
+                        { "$addToSet": {"votes.$.viewers": userId }},
+                    )
                 } else {
-                    return Battle.updateOne(
-                        { "_id": battleId, "votes.round": round, "votes.player": playerId },
-                        { "$pull": {"votes.$.viewers": userId }}
-                    );
+                    return Battle.findOneAndUpdate(
+                        { "_id": battleId, "votes._id": rv._id },
+                        { "$pull": {"votes.$.viewers": userId }},
+                    )
                 }
             })
 

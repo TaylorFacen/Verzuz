@@ -20,7 +20,9 @@ import PusherClient from '../../services/pusher';
 
 class BattleRoom extends Component {
     state = {
-        isLoading: true
+        isLoading: true,
+        // Putting currentVote directly in state because changes to the user object doesn't always render immediately
+        currentVote: null
     }
 
     async componentDidMount(){
@@ -51,6 +53,7 @@ class BattleRoom extends Component {
                 user,
                 pusher,
                 agora,
+                currentVote: user.getCurrentVote(battle.currentRound),
                 isLoading: false
             })
         } else {
@@ -217,12 +220,10 @@ class BattleRoom extends Component {
         })
     }
 
-    castVote = playerId => {
-        this.setState(prevState => {
-            const { battle, user } = prevState;
-            const updatedUser = battle.vote(playerId, battle.currentRound, user);
-            return { user: updatedUser }
-        })
+    castVote = async playerId => {
+        const { user, battle } = this.state;
+        await user.vote(battle.currentRound, playerId);
+        this.setState({ user, currentVote: playerId })
     }
 
     // User has to manually toggle audio due to Chrome / Safari rules
@@ -235,7 +236,6 @@ class BattleRoom extends Component {
             const { battle } = prevState;
             const { players } = battle
             const player = players.find(p => p._id === playerId);
-            console.log(player)
             const updatedPlayer = {
                 ...player,
                 isAudioConnected: !player.isAudioConnected
@@ -247,7 +247,7 @@ class BattleRoom extends Component {
     }
 
     render(){
-        const { battle, user, isLoading } = this.state;
+        const { battle, user, isLoading, currentVote } = this.state;
 
         return !isLoading ? (
             <div className = "BattleRoom">
@@ -263,7 +263,7 @@ class BattleRoom extends Component {
                         <Row className = "players">
                             { battle.players.sort((a, b) => a.name > b.name ? 1 : -1).map(p => {
                                 const isActive = battle.currentTurn === p._id && ( battle.currentRound <= battle.roundCount );
-                                const isCurrentVote = !!user.votes && user.votes.find(v => v.round === (battle.currentRound > battle.roundCount ? battle.currentRound - 1 : battle.currentRound)).playerId === p._id;
+                                const isCurrentVote = currentVote === p._id;
                                 const displayFinishTurnButton = isActive && user.id === p._id && battle.currentRound <= battle.roundCount;
                                 const score = battle.playerScores.find(s => s.player._id === p._id)?.score
                                 return (

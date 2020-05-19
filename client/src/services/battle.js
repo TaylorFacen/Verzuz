@@ -25,8 +25,16 @@ class User {
         }
     }
 
-    addVote = async ( round, playerId ) => {
-        this.votes.filter(vote => vote.round === round).playerId = playerId;
+    vote = async ( round, playerId ) => {
+        axios.post(`/api/battles/${this.battleId}/votes`, { playerId, round, userId: this.id })
+        .then(async () => {
+            this.votes.find(vote => vote.round === round).playerId = playerId;
+        })
+        
+    }
+
+    getCurrentVote = ( round ) => {
+        return round && this.votes ? this.votes.find(vote => vote.round === round).playerId : null;
     }
 }
 
@@ -141,15 +149,6 @@ class Battle {
             this.votes = votes;
         })
         .catch(error => console.log(error))
-    }
-
-    vote = async ( playerId, round, user ) => {
-        axios.post(`${this.baseUrl}/votes`, { playerId, round, userId: user.id })
-        .then(async () => {
-            // Update user object with new vote
-            await user.addVote(round, playerId);
-            return user
-        })
     }
 
     getVerificationCode = async phoneNumber => {

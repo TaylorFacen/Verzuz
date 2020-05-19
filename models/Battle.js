@@ -17,7 +17,7 @@ const playerSchema = new Schema({
 
 const votesSchema = new Schema({
     round: Number,
-    player: {type: Schema.Types.ObjectId, ref: 'playerSchema'},
+    playerId: {type: Schema.Types.ObjectId, ref: 'playerSchema'},
     viewers: [{type: Schema.Types.ObjectId, ref: 'viewerSchema'}]
 })
 
