@@ -27,21 +27,21 @@ const sendBattleVerificationCode = async phoneNumber => {
 }
 
 const sendBattleInvites = async battle => {
-    const participants = battle.participants;
-    participants.forEach(participant => {
+    const players = battle.players;
+    players.forEach(player => {
         const data = {
-            "name": participant.name,
+            "name": player.name,
             "battleName": battle.name,
             "roundCount": battle.roundCount,
-            "opponentName": participants.find(p => p.email !== participant.email).name,
+            "opponentName": players.find(p => p.email !== player.email).name,
             "audienceLimit": battle.audienceLimit,
             "viewerLink": `${CLIENT_URL}/battles/${battle._id}/join`,
             "playerLink": `${CLIENT_URL}/battles/${battle._id}/host`,
-            "accessCode": participant.accessCode
+            "accessCode": player.accessCode
         }
 
         const msg = {
-            to: participant.email,
+            to: player.email,
             from: 'hello@verzuz.app',
             templateId: 'd-89100ea50b9843789efe286cee700a80',
             dynamic_template_data: data,
