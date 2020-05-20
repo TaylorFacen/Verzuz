@@ -26,6 +26,8 @@ class BattleRoom extends Component {
     }
 
     async componentDidMount(){
+        window.analytics.page('Battle Room');
+
         const battleId = this.props.match.params.battleId.toUpperCase();
         const cookieResp = cookieService.parseCookie(battleId)
 

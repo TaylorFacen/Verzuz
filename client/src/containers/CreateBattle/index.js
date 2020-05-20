@@ -22,6 +22,10 @@ class CreateBattle extends Component {
         battle: null
     }
 
+    componentDidMount(){
+        window.analytics.page('Create Battle');
+    }
+
     submitBattleDetails = async e => {
         const { audienceLimit,  battleName, roundCount, player1Name, player1Email, player2Name, player2Email } = this.state;
         e.preventDefault();

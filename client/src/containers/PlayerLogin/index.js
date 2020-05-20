@@ -35,6 +35,8 @@ class PlayerLogin extends Component {
             // User is already authenticated as a player
             window.location.replace(`/battles/${battleId}`)
         } else {
+            window.analytics.page('Player Log In');
+            
             const battle = new Battle(battleId);
             await battle.init();
             this.setState({

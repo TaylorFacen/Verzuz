@@ -38,6 +38,8 @@ class ViewerLogin extends Component {
             // User is already authenticated
             window.location.replace(`/battles/${battleId}`)
         } else {
+            window.analytics.page('Viewer Log In');
+            
             this.setState({
                 isLoading: false,
                 battle
