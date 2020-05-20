@@ -14,7 +14,7 @@ class AgoraClient {
         }
     }
 
-    joinChannel = (userType, battleName, userId, updateParticipantsCallback) => {
+    joinChannel = (userType, battleName, userId, updatePlayersCallback) => {
         this.rtc.client.setClientRole(userType === "player" ? "host" : "audience");
 
         const uid = userType === 'player' ? userId : userId + String(Date.now())
@@ -65,7 +65,7 @@ class AgoraClient {
                         const isStreaming = err ? err?.video?.status === 'play' : true;
                         const isAudioConnected = err ? err?.audio?.status === 'play' : true;
 
-                        updateParticipantsCallback(id, isStreaming, isAudioConnected)
+                        updatePlayersCallback(id, isStreaming, isAudioConnected)
                     });
                 })
 
